@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><title>综合能源智慧托管平台｜可视化驾驶舱</title><style>
+/* ═══════════════════════════════════════════════════════════════
+   综合能源托管 · 结果可视化 —— 视觉系统 v2
+   深色能源控制台：青蓝(电)·琥珀(热)·青绿(冷)·黄绿(燃料)
+   无外部依赖，离线可用；数据与口径与原版完全一致
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#14263f;          /* 页面底：深海军蓝黑 */
+  --bg2:#172a45;
+  --panel:#1d3154;       /* 卡片底 */
+  --panel2:#182c49;      /* 次级卡/表头 */
+  --line:#2f4570;        /* 卡片边框 */
+  --line2:#243a5e;       /* 细分隔线 */
+  --grid:#2b4166;        /* 图表网格 */
+  --ink:#dbe6f5;         /* 主文字 */
+  --sub:#9cb3d5;         /* 次级文字 */
+  --sub3:#7a92b8;        /* 弱文字 */
+  --blue:#38bdf8;  --blue-d:#0ea5e9;  --blue-l:#7dd3fc;
+  --midblue:#60a5fa;     /* 充电站 */
+  --cyan:#22d3ee;        /* 储能 */
+  --amber:#fbbf24; --amber-d:#f59e0b;
+  --teal:#2dd4bf; --teal-d:#14b8a6;
+  --lime:#a3e635;        /* 天然气/燃料 */
+  --red:#fb7185;         /* 警示 */
+  --slate:#94a3b8;       /* 中性/整体 */
+  --ff:"Noto Sans SC","Source Han Sans SC","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  --ffn:"JetBrains Mono",Consolas,"Cascadia Mono","Microsoft YaHei",monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ff);
+  font-size:14px;line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px 56px}
+
+/* ── 头部 ───────────────────────────────────────────── */
+.hd{padding:26px 0 14px;position:relative}
+.hd::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,var(--blue-d) 0%,var(--line) 34%,var(--line) 100%)}
+.hd h1{font-size:23px;font-weight:750;letter-spacing:.2px;margin:0 0 6px;color:#eef4ff;
+  display:flex;align-items:center;gap:12px}
+.hd h1 .badge{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--blue);
+  border:1px solid color-mix(in srgb,var(--blue) 45%,transparent);border-radius:999px;
+  padding:2px 10px;background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.hd .sub{font-size:13px;color:var(--sub);margin:0 0 4px;letter-spacing:.15px}
+.hd .src{font-size:11px;color:var(--sub3);margin:0 0 16px;font-family:var(--ffn);letter-spacing:.3px}
+
+/* ── KPI 卡 ─────────────────────────────────────────── */
+.kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0 6px}
+.kc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px 12px;position:relative;overflow:hidden}
+.kc::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--mc,var(--blue))}
+.kc .l{font-size:11.5px;color:var(--sub);letter-spacing:.3px;line-height:1.4;margin-bottom:2px}
+.kc .v{font-size:24px;font-weight:750;letter-spacing:-.4px;line-height:1.25;color:#f2f7ff;
+  font-variant-numeric:tabular-nums;font-family:var(--ffn);white-space:nowrap}
+.kc .v .u{font-size:11.5px;font-weight:500;color:var(--sub);margin-left:5px;
+  font-family:var(--ff);letter-spacing:0}
+.kc .n{font-size:10.5px;color:var(--sub3);line-height:1.55;margin-top:2px}
+.kc .n b{color:var(--sub);font-weight:650}
+
+/* ── 模块 ───────────────────────────────────────────── */
+.mod{margin-top:34px}
+.mh{display:flex;align-items:baseline;gap:10px;margin:0 0 14px;padding-bottom:8px;
+  border-bottom:1px solid var(--line)}
+.mh .dot{flex:none;width:9px;height:9px;border-radius:2px;background:var(--mc,var(--blue));
+  transform:rotate(45deg);align-self:center}
+.mh h2{font-size:16px;font-weight:750;margin:0;color:#eef4ff;letter-spacing:.3px}
+.mh .note{font-size:11.5px;color:var(--sub3);margin-left:auto;letter-spacing:.2px}
+
+/* ── 图表卡片 ───────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 8px}
+.cbox .ct{font-size:13.5px;font-weight:700;color:#eef4ff;display:flex;align-items:center;gap:8px}
+.cbox .ct .tag{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--mc,var(--blue));
+  border:1px solid color-mix(in srgb,var(--mc,var(--blue)) 40%,transparent);border-radius:3px;
+  padding:1px 7px;font-family:var(--ffn)}
+.cbox .cs{font-size:11px;color:var(--sub);margin:3px 0 4px;line-height:1.6}
+.cbox svg{display:block;width:100%;height:auto}
+.cbox .cf{font-size:10.5px;color:var(--sub3);padding:4px 0 8px;line-height:1.6}
+
+/* SVG 图表内文字 */
+.chart{font-variant-numeric:tabular-nums}
+.chart .t-title{font-size:14px;font-weight:600;fill:#dbe6f5}
+.chart .t-sub{font-size:11.5px;fill:var(--sub3)}
+.chart .t-ax{font-size:11.5px;fill:var(--sub3)}
+.chart .t-lab{font-size:12px;fill:#a9bcdb}
+.chart .t-val{font-size:12.5px;font-weight:700;fill:#eef4ff;font-family:var(--ffn)}
+.chart .t-val.sm{font-size:11.5px;font-weight:600}
+.chart .t-node{font-size:12px;font-weight:700;fill:#eef4ff}
+.chart .t-node.sm{font-size:10.5px;font-weight:500;fill:#8ba3c4}
+.chart .t-flow{font-size:11px;font-weight:700;font-family:var(--ffn);fill:#eef4ff;
+  paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round}
+.chart .t-flow .unit{font-family:var(--ff);font-weight:500;fill:#8ba3c4}
+.chart .grid-ln{stroke:var(--grid);stroke-width:1}
+.chart .axis-ln{stroke:#2c3d60;stroke-width:1}
+.chart .ref-ln{stroke:var(--slate);stroke-width:1.4;stroke-dasharray:6 4}
+.chart .bar,.chart .seg{transition:opacity .18s ease}
+.chart .dim{opacity:.18}
+.chart .hl{opacity:1;filter:brightness(1.22)}
+.chart .node-r{transition:opacity .18s ease}
+.chart .nbox{filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+
+/* ── 表格 ───────────────────────────────────────────── */
+.tbl-scroll{overflow-x:auto;margin-top:14px}
+table.dt{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+table.dt th{background:var(--panel2);color:var(--sub);font-weight:600;font-size:11px;
+  letter-spacing:.4px;padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);
+  white-space:nowrap}
+table.dt th.k{text-align:left}
+table.dt td{padding:7px 12px;text-align:right;border-bottom:1px solid var(--line2);
+  color:var(--ink);font-family:var(--ffn);font-variant-numeric:tabular-nums}
+table.dt td.k{text-align:left;font-family:var(--ff)}
+table.dt td.k .dim2{color:var(--sub3)}
+table.dt tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+table.dt tr.tot td{background:color-mix(in srgb,var(--blue) 8%,var(--panel2));font-weight:750;
+  color:#eef4ff;border-top:1px solid var(--line)}
+table.dt tbody tr:last-child td{border-bottom:none}
+
+/* ── 说明框 ─────────────────────────────────────────── */
+.note{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--blue);
+  border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;line-height:1.7;color:var(--sub);
+  margin:14px 0}
+.note b{color:var(--ink);font-weight:650}
+.note.warn{border-left-color:var(--amber)}
+.note.warn b{color:var(--amber)}
+.note.danger{border-left-color:var(--red)}
+.note.danger b{color:var(--red)}
+.note.lime{border-left-color:var(--lime)}
+.note.lime b{color:var(--lime)}
+
+/* ── tooltip ────────────────────────────────────────── */
+#tip{position:fixed;z-index:99;max-width:280px;background:#0e1730;border:1px solid #2b3d63;
+  border-radius:8px;padding:7px 11px;font-size:11.5px;line-height:1.6;color:#dbe6f5;
+  pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s ease,transform .12s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#tip.on{opacity:1;transform:translateY(0)}
+#tip b{color:#eef4ff;font-weight:650}
+#tip .u{color:var(--sub3);font-size:10.5px}
+
+/* ── 页脚 ───────────────────────────────────────────── */
+.foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--sub3);line-height:1.8}
+
+/* ── 大屏化覆盖（方案 A：保留全部内容，套大屏视觉） ───── */
+body{
+  background:
+    radial-gradient(1300px 560px at 50% -12%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(1000px 460px at 6% 110%, rgba(45,212,191,.08), transparent 60%),
+    radial-gradient(1000px 460px at 94% 110%, rgba(163,230,53,.06), transparent 60%),
+    linear-gradient(180deg,#0f1c31 0%,#14263f 40%,#0d1a2e 100%);
+  background-attachment:fixed;
+}
+.wrap{max-width:1480px;padding:0 32px 64px}
+/* 全屏细网格（淡蓝科技纹理，向四周淡出） */
+.wrap::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(96,165,250,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(96,165,250,.05) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 92% 78% at 50% 0%,#000 34%,transparent 80%);
+  mask-image:radial-gradient(ellipse 92% 78% at 50% 0%,#000 34%,transparent 80%);
+}
+/* ── 头部：大标题居中 + 顶部光条 + 时间戳 ── */
+.hd{text-align:center;padding:32px 0 20px}
+.hd::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:300px;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--blue) 50%,transparent);
+  box-shadow:0 0 18px rgba(56,189,248,.5)}
+.hd::after{background:linear-gradient(90deg,transparent,var(--blue-d) 50%,transparent)}
+.hd .time{position:absolute;right:10px;top:16px;font-family:var(--ffn);font-size:13px;
+  letter-spacing:1px;color:var(--blue);border:1px solid rgba(56,189,248,.35);
+  border-radius:6px;padding:5px 14px;background:rgba(13,26,46,.65);
+  box-shadow:0 0 16px rgba(56,189,248,.14),inset 0 0 10px rgba(56,189,248,.05)}
+.hd h1{justify-content:center;font-size:30px;font-weight:800;letter-spacing:3px;margin:0 0 8px;
+  text-shadow:0 0 26px rgba(56,189,248,.4)}
+.hd .badge{font-size:11px}
+.hd .sub{font-size:14px}
+.hd .src{font-size:11.5px}
+/* ── KPI 栏：发光卡 ── */
+.kpi{gap:14px;margin:24px 0 8px}
+.kc{background:linear-gradient(180deg,rgba(31,53,92,.92),rgba(23,42,69,.9));
+  border:1px solid color-mix(in srgb,var(--mc,var(--blue)) 40%,var(--line));
+  border-radius:12px;padding:16px 16px 14px;
+  box-shadow:0 0 0 1px rgba(9,19,36,.6),0 8px 24px rgba(3,11,24,.38),
+    inset 0 0 20px rgba(255,255,255,.022)}
+.kc::before{height:3px;box-shadow:0 0 14px var(--mc,var(--blue))}
+.kc .l{font-size:12.5px;letter-spacing:.5px}
+.kc .v{font-size:30px}
+.kc .v .u{font-size:12.5px}
+.kc .n{font-size:11px}
+/* ── 模块标题：左侧光柱 + 底部分隔光带 ── */
+.mod{margin-top:40px}
+.mh{border-bottom:none;position:relative;padding:4px 0 12px 16px;margin-bottom:16px}
+.mh::before{content:"";position:absolute;left:0;top:2px;bottom:12px;width:4px;border-radius:2px;
+  background:linear-gradient(180deg,var(--mc,var(--blue)),transparent 90%)}
+.mh::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--mc,var(--blue)) 70%,transparent),
+    var(--line) 52%,transparent)}
+.mh h2{font-size:18px}
+.mh .note{font-size:12px}
+/* ── 图表卡片：发光边框 + 顶边光带 + 标题光条 ── */
+.grid2{gap:16px}
+.cbox{background:linear-gradient(180deg,rgba(31,53,92,.96),rgba(24,44,73,.92));
+  border:1px solid color-mix(in srgb,var(--mc,var(--blue)) 32%,var(--line));
+  border-radius:12px;padding:16px 18px 10px;position:relative;
+  box-shadow:0 0 0 1px rgba(9,19,36,.55),0 10px 28px rgba(3,11,24,.32),
+    inset 0 0 26px rgba(255,255,255,.016)}
+.cbox::before{content:"";position:absolute;top:0;left:16px;right:16px;height:1px;
+  background:linear-gradient(90deg,transparent,
+    color-mix(in srgb,var(--mc,var(--blue)) 60%,transparent),transparent)}
+.cbox .ct{font-size:14.5px;padding-left:12px;position:relative}
+.cbox .ct::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:3px;border-radius:2px;
+  background:var(--mc,var(--blue));box-shadow:0 0 10px var(--mc,var(--blue))}
+.cbox .cs{font-size:11.5px}
+.cbox .cf{font-size:11px}
+/* ── 表格 / 说明框：半透明发光面板 ── */
+table.dt{background:rgba(23,42,69,.88);border-color:var(--line);
+  box-shadow:0 0 0 1px rgba(9,19,36,.4),0 6px 18px rgba(3,11,24,.25)}
+.note{background:rgba(23,42,69,.85);border-color:var(--line);
+  box-shadow:0 0 0 1px rgba(9,19,36,.3)}
+.foot{font-size:11.5px}
+
+/* ── 响应式 ─────────────────────────────────────────── */
+@media (max-width:1060px){
+  .kpi{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:860px){
+  .grid2{grid-template-columns:1fr}
+  .kpi{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  .kpi{grid-template-columns:1fr}
+  .wrap{padding:0 14px 40px}
+}
+/* ── 打印：浅色反转 ─────────────────────────────────── */
+@media print{
+  body{background:#fff;color:#111}
+  .hd h1,.mh h2,.cbox .ct{color:#111}
+  .hd::after{background:#bbb}
+  .kc,.cbox,table.dt,.note{background:#fff;border-color:#ccc}
+  .kc::before{background:#999}
+  .chart .t-title,.chart .t-val,.chart .t-node{fill:#111}
+  .chart .t-lab,.chart .t-sub,.chart .t-ax,.chart .t-node.sm{fill:#666}
+  .chart .grid-ln{stroke:#ddd}
+  .cbox,.kc{break-inside:avoid}
+}
+
+
+:root{--bg:#03153a;--panel:#061f51;--panel2:#08295d;--line:#135aa8;--ink:#e8f7ff;--sub:#a7cbf0;--sub3:#789fc9;--grid:#163e79;--blue:#16d7ff;--cyan:#18ddfa;--amber:#ffd14b;--teal:#36edca;--lime:#a9ef4f}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:#e8f7ff;background:#020c2e;font-family:'Microsoft YaHei','PingFang SC',sans-serif}
+body:before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 50% 55% at 51% 37%,#0b3279 0%,#051b4d 57%,#020d32 100%)}
+.screen{width:100%;min-height:100vh;padding:0 17px 16px;max-width:2200px;margin:auto;position:relative}
+.top{height:73px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:3px solid #10aaff;background:linear-gradient(180deg,#083982,#03154a 75%);clip-path:polygon(0 0,100% 0,100% 67%,74% 67%,68% 100%,32% 100%,26% 67%,0 67%)}
+.top:before{content:'';position:absolute;bottom:0;left:25%;width:50%;height:4px;background:#19caff;filter:blur(3px)}.top h1{font-size:clamp(22px,2vw,33px);margin:0;letter-spacing:5px;color:#f9ffff;text-shadow:0 0 12px #31aaff;font-weight:900}.top h1:before,.top h1:after{content:'▰▰▰';font-size:17px;color:#0de9ff;margin:0 28px;letter-spacing:7px}.top .status{position:absolute;left:22px;top:14px;display:flex;gap:10px;align-items:center;font-size:12px;color:#91cfff}.signal{width:7px;height:7px;border-radius:50%;background:#25e5db;box-shadow:0 0 12px #25e5db}.top .clock{position:absolute;right:24px;top:13px;font-size:12px;color:#8ed7ff;font-family:Consolas,monospace}
+.ticker{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;margin:9px 0 12px;border:1px solid #10519c;background:#062451}.tick{height:61px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:1px solid #186cc0;background:linear-gradient(90deg,rgba(0,94,203,.1),transparent)}.tick:last-child{border:0}.tick small{font-size:12px;color:#b5d7f6}.tick strong{font-family:Consolas,'Microsoft YaHei',sans-serif;font-size:clamp(19px,1.7vw,27px);color:#ffbd3d;letter-spacing:1px;line-height:1.15}.tick strong.cyan{color:#37e9fe}.tick em{font-size:11px;font-weight:400;font-style:normal;color:#b7d7fa;margin-left:4px}
+.main{display:grid;grid-template-columns:minmax(260px,22%) minmax(440px,1fr) minmax(260px,22%);gap:13px;align-items:stretch}.side{display:flex;flex-direction:column;gap:12px}.panel{position:relative;background:linear-gradient(145deg,rgba(7,34,91,.97),rgba(4,23,70,.94));border:1px solid #135da9;box-shadow:inset 0 0 28px rgba(0,131,255,.08),0 0 14px rgba(0,112,238,.11);min-width:0;padding:13px}.panel:before,.panel:after{content:'';position:absolute;width:16px;height:16px;border-color:#19ddff;border-style:solid;pointer-events:none}.panel:before{top:-1px;left:-1px;border-width:2px 0 0 2px}.panel:after{right:-1px;bottom:-1px;border-width:0 2px 2px 0}.phead{height:34px;background:linear-gradient(90deg,#1175d0 0%,#0a367c 65%,transparent);border-left:3px solid #22ebff;box-shadow:inset 0 1px rgba(78,224,255,.45);display:flex;align-items:center;justify-content:space-between;padding:0 10px;margin:-3px -3px 15px;color:#fff;font-weight:800;font-size:15px;font-style:italic;letter-spacing:1px}.phead span{font-size:10px;font-weight:400;font-style:normal;color:#75d9ff}.quad{display:grid;grid-template-columns:1fr 1fr;gap:8px}.item{padding:10px 8px;background:linear-gradient(180deg,#0b3977,#07306b 70%,#041d52);border:1px solid #1469ba;border-radius:4px;text-align:center;box-shadow:inset 0 0 12px #1165bb55}.item small{display:block;font-size:11px;color:#afdbff}.item b{display:block;font-family:Consolas,sans-serif;font-size:clamp(18px,1.5vw,25px);color:#38ecff;white-space:nowrap}.item b.heat{color:#ffc943}.item b.cool{color:#34efc5}.item p{font-size:10px;margin:2px;color:#84b7ea}.panel p.subnote{color:#9bc8f3;font-size:11px;margin:10px 0 0;line-height:1.8}.chartsvg{display:block;width:100%;height:auto;overflow:visible}.legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:#acd7ff;margin:8px 0}.legend i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}.statrow{display:flex;gap:10px;justify-content:space-between;margin-top:8px}.statrow div{flex:1;background:#063b7a66;border-left:2px solid #19cdf9;padding:8px 5px;text-align:center}.statrow b{display:block;color:#33efff;font-family:Consolas,sans-serif;font-size:19px}.statrow small{font-size:10px;color:#add8fa}
+.center{display:flex;flex-direction:column;gap:12px;min-width:0}.hero{flex:1;min-height:560px;background:radial-gradient(ellipse at 50% 50%,rgba(8,93,183,.42),rgba(3,23,71,.18) 55%,transparent 78%);position:relative;display:flex;flex-direction:column}.hero>.phead{margin:0;flex:none;background:linear-gradient(90deg,#063e88,transparent);width:100%}.hero svg{display:block;width:100%;height:100%;min-height:500px;flex:1}.hero .key{position:absolute;bottom:10px;left:18px;font-size:11px;color:#80b7ed;background:#021841b5;padding:6px 10px;border:1px solid #135296}.hero .key b{color:#3be6ff}.pulse{animation:pulse 4s ease-in-out infinite;transform-origin:center}@keyframes pulse{50%{opacity:.62}}@keyframes orbit{to{transform:rotate(360deg)}}.orbit{transform-origin:460px 256px;animation:orbit 45s linear infinite}.flowpath{stroke-dasharray:7 10;animation:stream 8s linear infinite}@keyframes stream{to{stroke-dashoffset:-240}}.system{cursor:pointer;outline:none}.system svg{filter:drop-shadow(0 0 12px rgba(96,236,255,.38)) drop-shadow(0 0 18px rgba(34,182,255,.22))}.system:hover .nodeborder,.system:focus .nodeborder{stroke:#fff;stroke-width:3;filter:drop-shadow(0 0 12px #19dfff)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary .panel{padding:12px}.summary .name{font-size:12px;color:#a5d4fa}.summary strong{font-size:21px;font-family:Consolas,sans-serif;color:#ffe06b}.summary p{margin:5px 0 0;font-size:11px;color:#8ac0ef}
+.bars{display:flex;gap:8px;align-items:end;height:130px;padding:10px 10px 20px;border-bottom:1px solid #1b74be}.barcol{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;align-items:center;position:relative}.barcol>i{width:55%;display:block;background:linear-gradient(0deg,#0568af,#20def9);box-shadow:0 0 9px #19d7ec6e}.barcol:nth-child(2)>i{background:linear-gradient(0deg,#906119,#ffd550)}.barcol:nth-child(3)>i{background:linear-gradient(0deg,#078f7f,#4affd6)}.barcol span{position:absolute;bottom:-20px;font-size:10px;color:#b4dcff}.barcol b{font-size:12px;color:white}
+.actions{display:flex;justify-content:center;gap:10px;margin:13px auto 0}.action{border:1px solid #22bdff;background:linear-gradient(90deg,#0d61ab,#073b85);padding:10px 22px;color:white;font-weight:700;cursor:pointer;border-radius:3px}.action:hover{background:#148bdd;box-shadow:0 0 14px #18bbff}.action.alt{background:#061d4c}
+.footnote{font-size:11px;color:#98c4eb;text-align:center;padding:12px 0 4px}.details{display:none;max-width:1500px;margin:20px auto 0;padding:12px 24px 35px;background:#061b42;border:1px solid #1672b1}.details.open{display:block}.details .wrap{max-width:100%;padding:0 6px 40px}.details .mod{margin-top:32px}.details .kc,.details .cbox{background:linear-gradient(180deg,#102b57,#071e45)}.details .note{background:#0b2753}.details .mh h2{font-size:18px}.details h2{color:white}.details table.dt{background:#081d43}.details .chart .t-flow{stroke:#102b57}.details .chart .t-lab{fill:#c5e1fa}
+#tip{z-index:9999}
+@media(min-width:1650px){.screen{padding:0 22px 20px}.main{gap:18px}.panel{padding:16px}.hero{min-height:590px}.hero svg{min-height:500px}.side{gap:15px}}
+@media(max-width:1120px){.main{grid-template-columns:1fr 1fr}.center{grid-column:1/-1;grid-row:1}.side{display:grid;grid-template-columns:1fr 1fr;align-content:start}.side .panel:last-child:nth-child(odd){grid-column:1/-1}.top h1:before,.top h1:after{display:none}}
+@media(max-width:680px){.screen{padding:0 8px 15px}.top h1{font-size:19px;letter-spacing:1px}.top .status,.top .clock{display:none}.ticker{grid-template-columns:repeat(3,1fr)}.tick{height:57px}.tick strong{font-size:18px}.tick small{font-size:10px}.main{display:flex;flex-direction:column}.center{order:-1}.side{display:flex}.hero{min-height:355px}.hero svg{min-height:340px}.summary{grid-template-columns:1fr}.details{padding:10px 8px}.details .grid2{grid-template-columns:1fr}.details .kpi{grid-template-columns:repeat(2,1fr)}.hero .key{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.orbit,.pulse,.flowpath{animation:none}}
+.chart-lg .t-val{font-size:14.5px}.chart-lg .t-lab{font-size:13.9px}.chart-lg .t-ax{font-size:13.3px}.chart-lg .t-sub{font-size:13.3px}</style><style>
+.eh-diagram{max-height:680px}.eh-node{cursor:help}.eh-node:hover rect:first-child{stroke-width:2.5;filter:drop-shadow(0 0 5px #20d8ff)}.eh-edge{opacity:.82}.eh-lab{font-size:12px;paint-order:stroke;stroke:#041a42;stroke-width:4px;stroke-linejoin:round}.psc-tabs{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}.psc-tabs button{border:1px solid #1d73be;background:#0a3267;color:#c3e9ff;padding:9px 16px;border-radius:6px;cursor:pointer;font:inherit}.psc-tabs button.selected,.psc-tabs button:hover{background:#096ba7;border-color:#28dfff;color:white;box-shadow:0 0 12px #16adf955}.psc-pane{padding:20px;background:#092451;border:1px solid #2166a4;border-radius:10px}.psc-pane h3{margin:0 0 18px;color:#eefaff}.psc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.psc-stats>div{background:#0e366b;border:1px solid #245ba0;padding:16px;border-radius:7px}.psc-stats small{display:block;color:#aed8f3}.psc-stats strong{display:block;font-size:21px;color:#38e6ff;margin-top:8px}.psc-pane p{font-size:13px;color:#bdddf3;line-height:1.8}.details .mod{scroll-margin-top:18px}.jump-highlight{animation:jumpmark 1.9s ease-out}@keyframes jumpmark{0%,30%{filter:drop-shadow(0 0 15px #19dcff)}100%{filter:none}}@media(max-width:750px){.psc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style><style>
+.module-nav{display:flex;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:40;background:#04163de8;border-bottom:1px solid #1c81c7;padding:12px 6px;backdrop-filter:blur(14px)}
+.module-nav button{background:#0a356d;border:1px solid #1a84ba;color:#bfe9ff;border-radius:4px;padding:9px 14px;font-size:13px;cursor:pointer}.module-nav button:hover,.module-nav button.active{color:#fff;background:#0867a5;box-shadow:0 0 12px #27c7ff66}
+.module-group{margin-top:27px;border-top:1px solid #258ccb;padding:18px 3px 12px;scroll-margin-top:80px}.group-title{display:flex;flex-wrap:wrap;align-items:center;gap:18px;background:linear-gradient(90deg,#0e5190,#07214c);border-left:4px solid #15d9ff;padding:13px 17px}.group-title h2{margin:0;font-size:22px;color:white}.group-title span{color:#94cefc;font-size:12px}.chart-single{display:block;max-width:100%}.chart-single>.cbox{width:100%}.module-group .mod{scroll-margin-top:90px}
+.consumption{display:grid;gap:22px;padding:25px 2vw}.cons-line label{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#c8e6ff}.cons-line b{color:white}.cons-track{height:22px;border-radius:4px;overflow:hidden;display:flex;background:#0b3365;border:1px solid #1d6da6}.cons-track i{display:block;height:100%}.cons-line small{color:#93b9de}.sankey-modern .sk-band{transition:opacity .2s,filter .2s;cursor:help}.sankey-modern .sk-band:hover{opacity:1;filter:brightness(1.5)}.sankey-modern .sk-node{cursor:help}.sankey-modern .sk-node:hover{filter:drop-shadow(0 0 6px #2ae2ff)}.hub-activate{cursor:pointer;text-decoration:underline;text-decoration-color:#33dfff;text-underline-offset:5px}.hero .system svg{pointer-events:none}
+@media(min-width:1150px){.sankey-modern{max-height:600px}}@media(max-width:750px){.module-nav{position:relative}.group-title h2{font-size:18px}}
+</style><style>
+/* V3: Chart/table alignment and accessible responsive layouts */
+.income-side-by-side{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+.income-side-by-side > .cbox,.figure-table-row > .cbox{min-width:0;height:100%}#income-module .income-side-by-side > .side-table-card{display:flex;flex-direction:column}#income-module .income-side-by-side > .side-table-card > .tbl-scroll{flex:1 1 auto;display:flex;flex-direction:column}#income-module .income-side-by-side > .side-table-card > .tbl-scroll > table.dt{height:100%}
+.side-table-card .tbl-scroll,.figure-table-row .tbl-scroll{margin-top:12px;overflow-x:auto}
+.side-table-card table.dt,.figure-table-row table.dt{font-size:12px;table-layout:auto}
+.side-table-card table.dt th,.figure-table-row table.dt th{font-size:11px;padding:11px 8px;white-space:normal;line-height:1.5}
+.side-table-card table.dt td,.figure-table-row table.dt td{padding:11px 8px;line-height:1.5}
+.side-table-card table.dt th.k,.side-table-card table.dt td.k{min-width:124px}
+.energy-figure-pairs{display:flex;flex-direction:column;gap:16px}
+.figure-table-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.06fr);gap:16px;align-items:start}
+.figure9-card{max-width:100%}
+@media(max-width:1050px){.income-side-by-side,.figure-table-row{grid-template-columns:1fr}}
+</style></head><body>
+<div class="screen"><header class="top"><div class="status"><i class="signal"></i>方案测算数据 · 非实时接入</div><h1>综合能源智慧托管平台</h1><div class="clock" id="clock"></div></header>
+<div aria-label="核心经营指标" class="ticker"><div class="tick"><small>项目初始投资</small><strong>8,550<em>万元</em></strong></div><div class="tick"><small>年净收益</small><strong>2,048.35<em>万元</em></strong></div><div class="tick"><small>静态投资回收期</small><strong>4.17<em>年</em></strong></div><div class="tick"><small>年碳减排（仅CCHP侧）</small><strong class="cyan">2,193.72<em>tCO₂</em></strong></div><div class="tick"><small>供电收益贡献</small><strong>63.1<em>%</em></strong></div><div class="tick"><small>供热收益贡献</small><strong>32.8<em>%</em></strong></div></div>
+<div class="main"><aside class="side">
+<section class="panel"><div class="phead">项目基本信息 <span>PROJECT PROFILE</span></div><div class="quad"><div class="item"><small>综合方案</small><b>3+2</b><p>冷热电 + 储充</p></div><div class="item"><small>年度净收益</small><b>2048.35</b><p>万元 / 年</p></div><div class="item"><small>天然气年消耗</small><b class="heat">243.54</b><p>万 m³ / 年</p></div><div class="item"><small>静态回收期</small><b class="cool">4.17</b><p>年</p></div></div><p class="subnote">业务组成：CCHP 冷热电联供、光伏、储能、充电站、LNG 冷能梯级利用。</p></section>
+<section class="panel"><div class="phead">分系统收益构成 <span>万元 / 年</span></div><svg aria-label="供电1292.12，供热672.33，供冷83.90万元每年" class="chartsvg" role="img" viewbox="0 0 320 185"><circle cx="96" cy="90" fill="none" r="65" stroke="#092c64" stroke-width="24"></circle><circle cx="96" cy="90" fill="none" r="65" stroke="#24d9fe" stroke-dasharray="257.7 408.4" stroke-width="24" transform="rotate(-90 96 90)"></circle><circle cx="96" cy="90" fill="none" r="65" stroke="#ffd04b" stroke-dasharray="133.8 408.4" stroke-dashoffset="-257.7" stroke-width="24" transform="rotate(-90 96 90)"></circle><circle cx="96" cy="90" fill="none" r="65" stroke="#36eac4" stroke-dasharray="16.9 408.4" stroke-dashoffset="-391.5" stroke-width="24" transform="rotate(-90 96 90)"></circle><text fill="#fff" font-size="21" font-weight="bold" text-anchor="middle" x="96" y="88">2,048</text><text fill="#80c8ff" font-size="11" text-anchor="middle" x="96" y="107">万元/年</text><g fill="#c6e8ff" font-size="13"><circle cx="200" cy="57" fill="#24d9fe" r="5"></circle><text x="212" y="62">供电 63.1%</text><circle cx="200" cy="91" fill="#ffd04b" r="5"></circle><text x="212" y="96">供热 32.8%</text><circle cx="200" cy="125" fill="#36eac4" r="5"></circle><text x="212" y="130">供冷 4.1%</text></g></svg></section>
+<section class="panel"><div class="phead">主要能源年规模 <span>ENERGY SCALE</span></div><div class="quad"><div class="item"><small>光伏发电量</small><b>11.50</b><p>GWh / 年</p></div><div class="item"><small>CCHP发电量</small><b class="heat">10.56</b><p>GWh / 年</p></div><div class="item"><small>CCHP余热量</small><b class="heat">11.88</b><p>GWh / 年</p></div><div class="item"><small>储能吞吐量</small><b>2.40</b><p>GWh / 年</p></div></div><p class="subnote">注意：发电量、余热量与储能充放电吞吐量口径不同，不能直接累加。</p></section>
+</aside><div class="center"><section aria-label="多能互补系统总览" class="hero"><div class="phead">综合能源协同枢纽 <span>电 · 热 · 冷 · 气 · 储 · 充</span></div><svg aria-label="以综合能源托管为中心连接光伏、CCHP、储能、LNG冷能和充电站的交互示意图" role="img" viewbox="0 0 920 580"><defs><radialgradient id="globe"><stop offset="0" stop-color="#0f81cf" stop-opacity=".98"></stop><stop offset=".6" stop-color="#073a8b"></stop><stop offset="1" stop-color="#031342"></stop></radialgradient><filter id="glow"><fegaussianblur result="blur" stddeviation="7"></fegaussianblur><femerge><femergenode in="blur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge></filter><lineargradient id="platform" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#15cafa" stop-opacity=".55"></stop><stop offset="1" stop-color="#001e58" stop-opacity=".14"></stop></lineargradient></defs><ellipse cx="460" cy="276" fill="none" opacity=".34" rx="355" ry="182" stroke="#067bd6" stroke-dasharray="4 9" stroke-width="28"></ellipse><ellipse cx="460" cy="276" fill="none" opacity=".6" rx="330" ry="160" stroke="#20bcff" stroke-dasharray="7 7" stroke-width="1"></ellipse><ellipse cx="460" cy="280" fill="url(#platform)" filter="url(#glow)" rx="255" ry="110" stroke="#1edbff" stroke-width="3"></ellipse><g><path d="M460 258 Q332 162 205 135" fill="none" opacity=".7" stroke="#21dfff" stroke-width="3"></path><path class="flowpath" d="M460 258 Q332 162 205 135" fill="none" opacity=".9" stroke="#21dfff" stroke-width="2.5"></path><path d="M460 258 Q570 162 680 135" fill="none" opacity=".7" stroke="#ffcf57" stroke-width="3"></path><path class="flowpath" d="M460 258 Q570 162 680 135" fill="none" opacity=".9" stroke="#ffcf57" stroke-width="2.5"></path><path d="M460 258 Q327 276 194 365" fill="none" opacity=".7" stroke="#32ffff" stroke-width="3"></path><path class="flowpath" d="M460 258 Q327 276 194 365" fill="none" opacity=".9" stroke="#32ffff" stroke-width="2.5"></path><path d="M460 258 Q574 276 688 365" fill="none" opacity=".7" stroke="#38ecc0" stroke-width="3"></path><path class="flowpath" d="M460 258 Q574 276 688 365" fill="none" opacity=".9" stroke="#38ecc0" stroke-width="2.5"></path><path d="M460 258 Q455 318 450 447" fill="none" opacity=".7" stroke="#83bfff" stroke-width="3"></path><path class="flowpath" d="M460 258 Q455 318 450 447" fill="none" opacity=".9" stroke="#83bfff" stroke-width="2.5"></path></g><g class="orbit"><circle cx="460" cy="256" fill="none" opacity=".78" r="110" stroke="#1bddff" stroke-dasharray="130 31 70 90" stroke-width="6"></circle><circle cx="460" cy="256" fill="none" opacity=".78" r="124" stroke="#0479d5" stroke-dasharray="2 13" stroke-width="2"></circle></g><circle aria-label="进入综合能源系统" class="pulse hub-activate" cx="460" cy="256" fill="url(#globe)" filter="url(#glow)" r="100" role="button" stroke="#45dfff" stroke-width="3.5" tabindex="0"></circle><text fill="#ffe67c" font-size="42" font-weight="bold" text-anchor="middle" x="460" y="220">3+2</text><text class="hub-activate" data-jump="overall" fill="#fff" font-size="24" font-weight="bold" role="button" tabindex="0" text-anchor="middle" x="460" y="258">综合能源托管</text><text fill="#70e8ff" font-size="14" text-anchor="middle" x="460" y="287">多能源协同优化</text><text fill="#92bdef" font-size="12" text-anchor="middle" x="460" y="309">年度方案测算 · 非实时遥测</text><g aria-label="跳转光储充一体化系统的光伏发电分析" class="system" data-jump="pv" data-target="details" data-tip="光伏｜11.50 GWh/年｜年度模型测算结果" role="button" tabindex="0"><rect class="nodeborder" fill="#07275d" height="154" rx="16" stroke="#2ce3ff" stroke-width="2" width="192" x="108" y="66"></rect><rect fill="#0b3b7a" fill-opacity=".66" height="130" rx="14" width="170" x="119" y="78"></rect><circle cx="204" cy="116" fill="#1cbde4" fill-opacity=".16" r="38"></circle><svg aria-hidden="true" height="72" viewbox="0 0 120 72" width="128" x="140" y="80"><defs><lineargradient id="pvTop3" x1="0" x2="1"><stop offset="0" stop-color="#0c6ca1"></stop><stop offset="1" stop-color="#8ce6ff"></stop></lineargradient></defs><g><ellipse cx="60" cy="60" fill="#2bb4de" opacity=".18" rx="47" ry="8"></ellipse><polygon fill="#245f8d" points="17,52 53,36 94,50 58,65"></polygon><polygon fill="url(#pvTop3)" points="22,30 58,13 98,29 61,46" stroke="#ddf8ff" stroke-width="1.5"></polygon><polygon fill="#143a69" points="61,46 98,29 98,35 61,51"></polygon><polygon fill="#1c4f83" points="22,30 61,46 61,51 22,36"></polygon><path d="M31 25L69 40M42 20L80 35M54 16L92 31M30 31L37 28M42 35L49 32M54 39L61 36M66 43L73 40M37 22L39 35M50 17L52 39M64 20L66 42M77 25L79 36" stroke="#c8f2ff" stroke-width="1.15"></path><path d="M40 47V58M75 45V56" stroke="#edfdff" stroke-linecap="round" stroke-width="3"></path><path d="M25 58H89" stroke="#5ddcff" stroke-opacity=".6" stroke-width="2"></path><rect fill="#b8f6ff" height="5" rx="2" width="10" x="14" y="34"></rect><circle cx="21" cy="17" fill="#82ecff" r="2.3"></circle><circle cx="98" cy="20" fill="#82ecff" r="1.8"></circle></g></svg><text fill="#ffffff" font-size="22" font-weight="bold" text-anchor="middle" x="204" y="182">光伏</text><text fill="#a0dfff" font-size="14" text-anchor="middle" x="204" y="202">11.50 GWh/年</text></g><g aria-label="跳转CCHP收益成本碳核算模块" class="system" data-jump="cchp" data-target="details" data-tip="CCHP｜年发电 10.56 GWh/年｜年度模型测算结果" role="button" tabindex="0"><rect class="nodeborder" fill="#07275d" height="154" rx="16" stroke="#ffcf57" stroke-width="2" width="192" x="620" y="66"></rect><rect fill="#0b3b7a" fill-opacity=".66" height="130" rx="14" width="170" x="631" y="78"></rect><circle cx="716" cy="116" fill="#ffcf57" fill-opacity=".14" r="38"></circle><svg aria-hidden="true" height="72" viewbox="0 0 120 72" width="128" x="652" y="80"><defs><lineargradient id="cchpFront3" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#97d9f3"></stop><stop offset="1" stop-color="#4e83b5"></stop></lineargradient><lineargradient id="cchpRoof3" x1="0" x2="1"><stop offset="0" stop-color="#f1f9ff"></stop><stop offset="1" stop-color="#bbdef7"></stop></lineargradient></defs><g><ellipse cx="60" cy="60" fill="#ffd96c" opacity=".16" rx="45" ry="8"></ellipse><polygon fill="#4a6f92" points="17,54 51,40 89,52 56,65"></polygon><polygon fill="url(#cchpRoof3)" points="22,21 49,9 87,20 58,33" stroke="#f3fcff"></polygon><polygon fill="url(#cchpFront3)" points="22,21 58,33 58,54 22,43" stroke="#e6f8ff"></polygon><polygon fill="#5e96c8" points="58,33 87,20 87,43 58,54" stroke="#d4f2ff"></polygon><rect fill="#2f6fa6" height="21" rx="2" width="19" x="88" y="25"></rect><path d="M96 25V8M106 27V14" stroke="#f7c96a" stroke-linecap="round" stroke-width="6"></path><path d="M30 31h10M30 37h14M30 43h8" stroke="#1f689b" stroke-width="2.3"></path><rect fill="#93e7ff" height="13" rx="2" width="11" x="93" y="27"></rect><path d="M58 45H89" stroke="#ffbb52" stroke-width="4" stroke-linecap="round"></path><path d="M17 49H58" stroke="#31c8ff" stroke-width="4" stroke-linecap="round"></path><circle cx="17" cy="17" fill="#ffd873" r="2.2"></circle></g></svg><text fill="#ffffff" font-size="22" font-weight="bold" text-anchor="middle" x="716" y="182">CCHP</text><text fill="#a0dfff" font-size="14" text-anchor="middle" x="716" y="202">10.56 GWh/年</text></g><g aria-label="跳转光储充一体化系统的储能运行分析" class="system" data-jump="storage" data-target="details" data-tip="储能｜年充放吞吐 2.40 GWh/年｜年度模型测算结果" role="button" tabindex="0"><rect class="nodeborder" fill="#07275d" height="154" rx="16" stroke="#4fe9ff" stroke-width="2" width="192" x="96" y="297"></rect><rect fill="#0b3b7a" fill-opacity=".66" height="130" rx="14" width="170" x="107" y="309"></rect><circle cx="192" cy="347" fill="#4fe9ff" fill-opacity=".16" r="38"></circle><svg aria-hidden="true" height="72" viewbox="0 0 120 72" width="128" x="128" y="311"><g><ellipse cx="60" cy="60" fill="#4fe9ff" opacity=".14" rx="44" ry="8"></ellipse><polygon fill="#2a4f72" points="16,54 51,40 91,52 57,66"></polygon><path d="M20 24L44 13L91 26L66 38Z" fill="#d7f2ff" stroke="#dcfaff"></path><path d="M20 24L66 38V59L20 46Z" fill="#2c82be" stroke="#b4efff"></path><path d="M66 38L91 26V49L66 59Z" fill="#12456f" stroke="#b4efff"></path><path d="M29 31V45M40 34V48M51 37V51" stroke="#7ef1ff" stroke-width="2"></path><rect fill="#17385e" height="13" rx="1.5" width="15" x="73" y="40"></rect><path d="M77 46h7M80.5 42.5v7" stroke="#53f1d7" stroke-width="2"></path><circle cx="17" cy="17" fill="#7ef1ff" r="2"></circle></g></svg><text fill="#ffffff" font-size="22" font-weight="bold" text-anchor="middle" x="192" y="413">储能</text><text fill="#a0dfff" font-size="14" text-anchor="middle" x="192" y="435">2.40 GWh/年</text></g><g aria-label="跳转LNG冷能多级利用模块" class="system" data-jump="lng" data-target="details" data-tip="LNG冷能｜年总冷能 1.1006 GWh/年（三级实供 1.0638）｜冷能净收益 83.90 万元/年｜年度模型测算结果" role="button" tabindex="0"><rect class="nodeborder" fill="#07275d" height="154" rx="16" stroke="#3af3cb" stroke-width="2" width="192" x="620" y="297"></rect><rect fill="#0b3b7a" fill-opacity=".66" height="130" rx="14" width="170" x="631" y="309"></rect><circle cx="716" cy="347" fill="#3af3cb" fill-opacity=".16" r="38"></circle><svg aria-hidden="true" height="72" viewbox="0 0 120 72" width="128" x="652" y="311"><g><ellipse cx="60" cy="58" fill="#3af3cb" opacity=".12" rx="43" ry="9"></ellipse><path d="M18 54L49 40L88 52L56 65Z" fill="#27546b"></path><ellipse cx="34" cy="22" fill="#e0fcff" rx="17" ry="6.5"></ellipse><path d="M17 22V49Q34 60 51 49V22" fill="#69bfd4" stroke="#d8ffff"></path><ellipse cx="34" cy="49" fill="#0b6f9d" rx="17" ry="6.5"></ellipse><path d="M52 40H71V23H98" fill="none" stroke="#7af6e5" stroke-linecap="round" stroke-width="5"></path><rect fill="#80e3e4" height="21" rx="3" stroke="#d8ffff" width="29" x="69" y="15"></rect><path d="M75 25h16M83 18v14" stroke="#15618e" stroke-width="1.5"></path></g></svg><text fill="#ffffff" font-size="22" font-weight="bold" text-anchor="middle" x="716" y="413">LNG冷能</text><text fill="#a0dfff" font-size="14" text-anchor="middle" x="716" y="435">1.10 GWh/年</text></g><g aria-label="跳转光储充一体化系统的充电设施分析" class="system" data-jump="charging" data-target="details" data-tip="充电站｜终端用电 12.00 GWh/年｜年收益 430 万元｜年度模型测算结果" role="button" tabindex="0"><rect class="nodeborder" fill="#07275d" height="154" rx="16" stroke="#83bfff" stroke-width="2" width="192" x="364" y="392"></rect><rect fill="#0b3b7a" fill-opacity=".66" height="130" rx="14" width="170" x="375" y="404"></rect><circle cx="460" cy="442" fill="#83bfff" fill-opacity=".16" r="38"></circle><svg aria-hidden="true" height="72" viewbox="0 0 120 72" width="128" x="396" y="406"><g><ellipse cx="57" cy="61" fill="#83bfff" opacity=".14" rx="45" ry="8"></ellipse><path d="M17 47L36 34H79L96 47V57H17Z" fill="#eef8ff" stroke="#7cd6ff" stroke-width="1.4"></path><path d="M38 34L49 23H71L81 34Z" fill="#75c0f2"></path><circle cx="40" cy="56" fill="#112f59" r="7" stroke="#9adaff"></circle><circle cx="78" cy="56" fill="#112f59" r="7" stroke="#9adaff"></circle><rect fill="#e2fbff" height="44" rx="3" stroke="#2addff" width="18" x="101" y="11"></rect><path d="M110 19L105 29H111L107 39" fill="none" stroke="#17aaff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path><path d="M97 30C91 27 83 29 79 34" fill="none" stroke="#6ee6ff" stroke-width="2"></path><path d="M18 60H96" stroke="#9ddcff" stroke-opacity=".45" stroke-width="1.8"></path><circle cx="17" cy="18" fill="#b3ecff" r="2"></circle></g></svg><text fill="#ffffff" font-size="22" font-weight="bold" text-anchor="middle" x="460" y="508">充电站</text><text fill="#a0dfff" font-size="14" text-anchor="middle" x="460" y="530">12.00 GWh/年</text></g><text fill="#5a9ddb" font-size="12" text-anchor="middle" x="460" y="565">点击系统节点查看原始精细分析 / 鼠标悬停查看测算口径</text></svg><div class="key"><b>●</b> 蓝色：电   <b style="color:#ffd058">●</b> 热   <b style="color:#38edc6">●</b> 冷   数据来源：原HTML核算结果</div></section><div class="summary"><section class="panel"><div class="name">⚡ 光储充一体化 · 年净收益</div><strong>1,292.12 万</strong><p>含光伏 742.12、储能 120、充电站 430 万元/年</p></section><section class="panel"><div class="name">♨ CCHP 联供 · 年净收益</div><strong>672.33 万</strong><p>年发电 10.56 GWh；余热利用 11.88 GWh</p></section><section class="panel"><div class="name">❄ LNG 冷能 · 年净收益</div><strong>83.90 万</strong><p>静态回收期 7.15 年，为优化重点</p></section></div></div>
+<aside class="side"><section class="panel"><div class="phead">年度收益分项 <span>万元 / 年</span></div><div class="bars"><div class="barcol"><b>1292</b><i style="height:100%"></i><span>供电</span></div><div class="barcol"><b>672</b><i style="height:52%"></i><span>供热</span></div><div class="barcol"><b>83.9</b><i style="height:7%"></i><span>供冷</span></div></div><p class="subnote">按照原测算的年净收益展示，非实时功率曲线。</p></section>
+<section class="panel"><div class="phead">光储充经营细分 <span>占供电收益</span></div><div class="quad"><div class="item"><small>光伏收益</small><b>742.12</b><p>57.4%</p></div><div class="item"><small>充电站收益</small><b>430.00</b><p>33.3%</p></div><div class="item"><small>储能收益</small><b>120.00</b><p>9.3%</p></div><div class="item"><small>光伏自用比例</small><b class="cool">85.0%</b><p>余电上网 15%</p></div></div></section>
+<section class="panel"><div class="phead">投资回收期对比 <span>静态 · 年</span></div><svg aria-label="供热3.93年供电4.11年供冷7.15年" class="chartsvg" role="img" viewbox="0 0 325 165"><g fill="#b8defe" font-size="12"><text x="8" y="34">供热</text><text x="8" y="80">供电</text><text x="8" y="126">供冷</text></g><rect fill="#0a386a" height="22" rx="3" width="228" x="54" y="16"></rect><rect fill="#0a386a" height="22" rx="3" width="228" x="54" y="62"></rect><rect fill="#0a386a" height="22" rx="3" width="228" x="54" y="108"></rect><rect fill="#f4c54b" height="22" width="125" x="54" y="16"></rect><rect fill="#29d8ff" height="22" width="131" x="54" y="62"></rect><rect fill="#2ae4c0" height="22" width="228" x="54" y="108"></rect><g fill="white" font-size="13" font-weight="bold"><text x="187" y="32">3.93</text><text x="193" y="78">4.11</text><text x="287" y="124">7.15</text></g></svg><p class="subnote">整体静态回收期 4.17 年；未考虑资金时间价值。</p></section>
+<section class="panel"><div class="phead">碳减排核算边界 <span>CARBON</span></div><div class="statrow"><div><b>2,193.72</b><small>tCO₂ / 年</small></div><div><b>100%</b><small>当前来自 CCHP 侧</small></div></div><p class="subnote">光伏、LNG 冷能、储充移峰的减碳量尚未计入。不能将此值解释为各子系统完整碳减排之和。</p></section></aside></div>
+<div class="actions"><button aria-controls="details" aria-expanded="false" class="action" id="showDetail">展开完整分析与全部图表 ↓</button><button class="action alt" id="fullScreen">全屏演示 ⛶</button></div><div class="footnote">年度方案结果看板 · 静态测算数据展示，不代表现场实时运行状态 · 点击下方可查看原版全部图表、计算依据及口径说明</div></div>
+<section class="details" id="details"><div class="phead">原始测算 · 全量图表与计算依据 <span>完整保留源 HTML 内容</span></div><div class="wrap"><!-- ══════════ KPI 总览 ══════════ --><nav aria-label="四大系统模块导航" class="module-nav"><button data-nav="module-overall" type="button">01 综合能源系统</button><button data-nav="module-cchp" type="button">02 冷热电联供</button><button data-nav="module-psc" type="button">03 光储充一体化</button><button data-nav="module-lng" type="button">04 LNG冷能多级利用</button><button data-back="home" type="button">↑ 返回首页</button></nav>
+<div class="kpi">
+<div class="kc" style="--mc:var(--slate)"><div class="l">初始投资</div><div class="v">8,550<span class="u">万元</span></div><div class="n">项目初始投资总额</div></div>
+<div class="kc" style="--mc:var(--blue)"><div class="l">年净收益</div><div class="v">2,048<span class="u">万元/年</span></div><div class="n">三分系统合计</div></div>
+<div class="kc" style="--mc:var(--amber)"><div class="l">静态回收期</div><div class="v">4.17<span class="u">年</span></div><div class="n">投资 ÷ 年净收益</div></div>
+<div class="kc" style="--mc:var(--teal)"><div class="l">年碳减排</div><div class="v">2,194<span class="u">tCO₂/年</span></div><div class="n"><b>★ 仅核算 CCHP 侧</b></div></div>
+<div class="kc" style="--mc:var(--amber)"><div class="l">供热 CCHP</div><div class="v">672<span class="u">万元/年</span></div><div class="n">占比 32.8%</div></div>
+<div class="kc" style="--mc:var(--blue)"><div class="l">供电 光储充</div><div class="v">1,292<span class="u">万元/年</span></div><div class="n">占比 63.1%</div></div>
+</div>
+<!-- ══════════ 模块 1 · 收益构成 ══════════ -->
+<!-- ══════════ 模块 2 · 多能流与能耗 ══════════ -->
+<!-- ══════════ 模块 3 · LNG 冷能多级利用 ══════════ -->
+<!-- ══════════ 模块 3 · 回收期 ══════════ -->
+<!-- ══════════ 模块 4 · 运行规模 ══════════ -->
+<div id="tip" role="tooltip"></div>
+<section aria-label="01 综合能源系统" class="module-group" id="module-overall"><div class="group-title"><h2>01 综合能源系统</h2><span>总体收益 / 多能流与能耗 / 回收期 / 运行规模</span></div><section class="mod" id="income-module">
+<div class="mh"><span class="dot" style="--mc:var(--blue)"></span><h2>收益构成</h2><span class="note">三分系统收益 · 供电子系统内部拆分</span></div>
+<div class="income-side-by-side">
+<!-- 3D 立体饼图 -->
+<div class="cbox" style="--mc:var(--blue)">
+<div class="ct"><span class="tag">图 1</span>三分系统年净收益构成</div>
+<div class="cs">合计 2,048.35 万元/年 · 供热 672.33 ＋ 供电 1,292.12 ＋ 供冷 83.90</div>
+<svg aria-label="三分系统年净收益构成立体饼图" class="chart" role="img" viewbox="0 19.26 560 275.19">
+<defs>
+<lineargradient id="gBlue" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#8fd8fb"></stop><stop offset="1" stop-color="#38bdf8"></stop>
+</lineargradient>
+<lineargradient id="gAmber" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#fde68a"></stop><stop offset="1" stop-color="#fbbf24"></stop>
+</lineargradient>
+<lineargradient id="gTeal" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#99f6e4"></stop><stop offset="1" stop-color="#2dd4bf"></stop>
+</lineargradient>
+<lineargradient id="sBlue" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#38bdf8"></stop><stop offset="1" stop-color="#0284c7"></stop>
+</lineargradient>
+<lineargradient id="sAmber" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#fbbf24"></stop><stop offset="1" stop-color="#d97706"></stop>
+</lineargradient>
+<lineargradient id="sTeal" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#2dd4bf"></stop><stop offset="1" stop-color="#0d9488"></stop>
+</lineargradient>
+</defs>
+<!-- 3D 立体饼图 -->
+<!-- 扇区侧壁：供电 63.1% / 供热 32.8% / 供冷 4.1% -->
+<g class="seg" data-grp="donut" data-tip="供电 光储充一体化｜年净收益 1,292.12 万元/年｜占比 63.1%｜回收期 4.11 年">
+<path d="M280,56 A108,74 0 1 1 200.81,180.32 L200.81,206.32 A108,74 0 1 0 280,82 Z" fill="url(#sBlue)"></path>
+</g>
+<g class="seg" data-grp="donut" data-tip="供热 CCHP 冷热电联供｜年净收益 672.33 万元/年｜占比 32.8%｜回收期 3.93 年">
+<path d="M200.81,180.32 A108,74 0 0 1 252.48,58.44 L252.48,84.44 A108,74 0 0 0 200.81,206.32 Z" fill="url(#sAmber)"></path>
+</g>
+<g class="seg" data-grp="donut" data-tip="供冷 LNG 冷能梯级利用｜年净收益 83.90 万元/年｜占比 4.1%｜回收期 7.15 年">
+<path d="M252.48,58.44 A108,74 0 0 1 280,56 L280,82 A108,74 0 0 0 252.48,84.44 Z" fill="url(#sTeal)"></path>
+</g>
+<!-- 扇区顶面（压住侧壁内缘，形成厚度感） -->
+<g class="seg" data-grp="donut" data-tip="供电 光储充一体化｜年净收益 1,292.12 万元/年｜占比 63.1%｜回收期 4.11 年">
+<path d="M280,130 L280,56 A108,74 0 1 1 200.81,180.32 Z" fill="url(#gBlue)" stroke="#12233f" stroke-width="1"></path>
+</g>
+<g class="seg" data-grp="donut" data-tip="供热 CCHP 冷热电联供｜年净收益 672.33 万元/年｜占比 32.8%｜回收期 3.93 年">
+<path d="M280,130 L200.81,180.32 A108,74 0 0 1 252.48,58.44 Z" fill="url(#gAmber)" stroke="#12233f" stroke-width="1"></path>
+</g>
+<g class="seg" data-grp="donut" data-tip="供冷 LNG 冷能梯级利用｜年净收益 83.90 万元/年｜占比 4.1%｜回收期 7.15 年">
+<path d="M280,130 L252.48,58.44 A108,74 0 0 1 280,56 Z" fill="url(#gTeal)" stroke="#12233f" stroke-width="1"></path>
+</g>
+<!-- 供电扇区（最大块）内 63.1% -->
+<text class="t-val sm" data-grp="donut" data-tip="供电 光储充一体化｜1,292.12 万元/年｜63.1%" style="stroke:#0a1526;stroke-width:2.5;paint-order:stroke" text-anchor="middle" x="347" y="155">63.1%</text>
+<!-- 供热 32.8%：外置引线 -->
+<line opacity=".7" stroke="#fbbf24" stroke-width="1" x1="176" x2="150" y1="109" y2="88"></line>
+<text class="t-val sm" data-grp="donut" data-tip="供热 CCHP 冷热电联供｜672.33 万元/年｜32.8%" text-anchor="end" x="146" y="86">32.8%</text>
+<!-- 供冷扇区过窄（4.1%），标签外置并加引线 -->
+<line opacity=".7" stroke="#2dd4bf" stroke-width="1" x1="266" x2="256" y1="57" y2="42"></line>
+<text class="t-val sm" data-grp="donut" data-tip="供冷 LNG 冷能梯级利用｜83.90 万元/年｜4.1%" style="fill:#5eead4;stroke:#0a1526;stroke-width:2;paint-order:stroke" text-anchor="middle" x="256" y="38">4.1%</text>
+<!-- 图例：饼图下方两行横排，与图形完全分离 -->
+<rect fill="url(#gAmber)" height="12" rx="3" width="12" x="48" y="247.04"></rect>
+<text class="t-lab" x="66" y="257.04">供热 CCHP</text>
+<text class="t-val sm" x="150" y="257.04">672 <tspan class="t-sub" style="font-family:var(--ff)">万/年 · 32.8%</tspan></text>
+<rect fill="url(#gBlue)" height="12" rx="3" width="12" x="300" y="247.04"></rect>
+<text class="t-lab" x="318" y="257.04">供电 光储充</text>
+<text class="t-val sm" x="402" y="257.04">1,292 <tspan class="t-sub" style="font-family:var(--ff)">万/年 · 63.1%</tspan></text>
+<rect fill="url(#gTeal)" height="12" rx="3" width="12" x="48" y="273.04"></rect>
+<text class="t-lab" x="66" y="283.04">供冷 LNG</text>
+<text class="t-val sm" x="150" y="283.04">83.9 <tspan class="t-sub" style="font-family:var(--ff)">万/年 · 4.1%</tspan></text>
+<text class="t-lab" x="300" y="283.04">合计</text>
+<text class="t-val sm" x="402" y="283.04">2,048.35 <tspan class="t-sub" style="font-family:var(--ff)">万元/年</tspan></text>
+</svg>
+<div class="cf">点击悬停查看子系统口径；供冷占比 4.1%，回收期 7.15 年为最长拖累项</div>
+</div>
+<!-- 供电拆分柱状图 -->
+<div class="cbox side-table-card"><div class="ct">子系统收益与投资回收期</div><div class="cs">收益占比与静态回收期 · 图 1 配套明细</div><div class="tbl-scroll">
+<table class="dt" style="margin-top:14px">
+<colgroup><col style="width:42%"/><col style="width:20%"/><col style="width:16%"/><col style="width:22%"/></colgroup>
+<thead><tr><th class="k">子系统</th><th>年净收益（万元/年）</th><th>占比</th><th>静态回收期（年）</th></tr></thead>
+<tbody>
+<tr><td class="k">供热 CCHP 冷热电联供</td><td>672.33</td><td>32.8%</td><td>3.93</td></tr>
+<tr><td class="k">供电 光储充一体化</td><td>1,292.12</td><td>63.1%</td><td>4.11</td></tr>
+<tr><td class="k">供冷 LNG 冷能梯级利用</td><td>83.90</td><td>4.1%</td><td>7.15</td></tr>
+<tr class="tot"><td class="k">合计</td><td>2,048.35</td><td>100.0%</td><td>4.17</td></tr>
+</tbody>
+</table>
+</div></div></div>
+<!-- 子系统收益与回收期表 -->
+
+</section><section class="mod" id="flow-module">
+<div class="mh"><span class="dot" style="--mc:var(--lime)"></span><h2>多能流与能耗</h2><span class="note">天然气 → 电 / 热 / 冷 · 唯一四能流产线</span></div>
+<div class="cbox" style="--mc:var(--lime)">
+<div class="ct"><span class="tag">图 2</span>综合能源多能流（源 — 转换 — 用能）</div>
+<div class="cs">四列桑基式能源关系图｜参考示例的半透明弧形流带、彩色竖向节点与左→右路径。线宽仅作关系示意，不代表跨能源介质的统一计量。</div><svg aria-label="综合能源系统桑基式多能源流向图" class="chart sankey-modern" role="img" viewbox="0 0 1180 525"><defs>
+<lineargradient id="skbg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#071d49"></stop><stop offset="1" stop-color="#051432"></stop></lineargradient>
+<filter id="skglow"><fegaussianblur stddeviation="3"></fegaussianblur></filter>
+</defs><rect fill="url(#skbg)" height="525" rx="12" width="1180" x="0" y="0"></rect><text fill="#78baff" font-size="17" font-weight="700" x="30" y="29">01 能源输入</text><text fill="#78baff" font-size="17" font-weight="700" x="320" y="29">02 转换 / 生产</text><text fill="#78baff" font-size="17" font-weight="700" x="634" y="29">03 储存 / 调度</text><text fill="#78baff" font-size="17" font-weight="700" x="955" y="29">04 终端用能</text><defs><lineargradient id="skgrad0" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#b7f365" stop-opacity=".52"></stop><stop offset="1" stop-color="#ffd379" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M145,72.3 C253,72.3 229,77.3 335,77.3 L335,136.7 C229,136.7 253,131.7 145,131.7 Z" data-tip="天然气 → CCHP｜243.54 万 m³/年，体积量未折算为 GWh" fill="url(#skgrad0)" stroke="#ffd379" stroke-opacity=".2" stroke-width=".6"><title>天然气 → CCHP｜243.54 万 m³/年，体积量未折算为 GWh</title></path><defs><lineargradient id="skgrad1" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#25d9ff" stop-opacity=".52"></stop><stop offset="1" stop-color="#55aaff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M145,213.775 C253,213.775 229,216.775 335,216.775 L335,253.225 C229,253.225 253,250.225 145,250.225 Z" data-tip="屋顶光伏 → 电力调度｜发电 11.50 GWh/年" fill="url(#skgrad1)" stroke="#55aaff" stroke-opacity=".2" stroke-width=".6"><title>屋顶光伏 → 电力调度｜发电 11.50 GWh/年</title></path><defs><lineargradient id="skgrad2" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#68c5ff" stop-opacity=".52"></stop><stop offset="1" stop-color="#a1bfff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M145,340.85 C253,340.85 229,341.85 335,341.85 L335,366.15 C229,366.15 253,365.15 145,365.15 Z" data-tip="电网 → 电力调度｜购电量未提供" fill="url(#skgrad2)" stroke="#a1bfff" stroke-opacity=".2" stroke-width=".6"><title>电网 → 电力调度｜购电量未提供</title></path><defs><lineargradient id="skgrad3" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#4be0cb" stop-opacity=".52"></stop><stop offset="1" stop-color="#8c9eff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M145,464.525 C253,464.525 229,463.525 335,463.525 L335,486.475 C229,486.475 253,487.475 145,487.475 Z" data-tip="LNG 冷能 → 梯级利用｜理论冷能 1.1006 GWh/年" fill="url(#skgrad3)" stroke="#8c9eff" stroke-opacity=".2" stroke-width=".6"><title>LNG 冷能 → 梯级利用｜理论冷能 1.1006 GWh/年</title></path><defs><lineargradient id="skgrad4" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#ffd379" stop-opacity=".52"></stop><stop offset="1" stop-color="#31d6ff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M450,65.15 C558,65.15 546,64.475 652,64.475 L652,99.575 C546,99.575 558,100.25 450,100.25 Z" data-tip="CCHP 发电 → 电力调度｜10.56 GWh/年" fill="url(#skgrad4)" stroke="#31d6ff" stroke-opacity=".2" stroke-width=".6"><title>CCHP 发电 → 电力调度｜10.56 GWh/年</title></path><defs><lineargradient id="skgrad5" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#ffb85a" stop-opacity=".52"></stop><stop offset="1" stop-color="#f5db82" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M450,100.25 C558,100.25 546,269.7 652,269.7 L652,318.3 C546,318.3 558,148.85 450,148.85 Z" data-tip="CCHP 余热 → 余热分配｜11.88 GWh/年" fill="url(#skgrad5)" stroke="#f5db82" stroke-opacity=".2" stroke-width=".6"><title>CCHP 余热 → 余热分配｜11.88 GWh/年</title></path><defs><lineargradient id="skgrad6" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#36d8ff" stop-opacity=".52"></stop><stop offset="1" stop-color="#41c0ff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M450,220.15 C558,220.15 546,99.575 652,99.575 L652,129.275 C546,129.275 558,249.85 450,249.85 Z" data-tip="光伏 → 电力调度｜11.50 GWh/年" fill="url(#skgrad6)" stroke="#41c0ff" stroke-opacity=".2" stroke-width=".6"><title>光伏 → 电力调度｜11.50 GWh/年</title></path><defs><lineargradient id="skgrad7" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#88aaff" stop-opacity=".52"></stop><stop offset="1" stop-color="#57baff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M450,343.875 C558,343.875 546,129.275 652,129.275 L652,149.525 C546,149.525 558,364.125 450,364.125 Z" data-tip="电网 → 电力调度｜购电量未提供" fill="url(#skgrad7)" stroke="#57baff" stroke-opacity=".2" stroke-width=".6"><title>电网 → 电力调度｜购电量未提供</title></path><defs><lineargradient id="skgrad8" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#4be8d0" stop-opacity=".52"></stop><stop offset="1" stop-color="#47e5aa" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M450,462.85 C558,462.85 546,460.85 652,460.85 L652,485.15 C546,485.15 558,487.15 450,487.15 Z" data-tip="LNG 冷能 → 低温用冷｜理论回收潜力 1.1006 GWh/年" fill="url(#skgrad8)" stroke="#47e5aa" stroke-opacity=".2" stroke-width=".6"><title>LNG 冷能 → 低温用冷｜理论回收潜力 1.1006 GWh/年</title></path><defs><lineargradient id="skgrad9" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#38c9ff" stop-opacity=".52"></stop><stop offset="1" stop-color="#8dbaff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M764,68.525 C872,68.525 872,78.675 978,78.675 L978,131.325 C872,131.325 872,121.175 764,121.175 Z" data-tip="电力调度 → 用电端｜分时购售电数据未提供" fill="url(#skgrad9)" stroke="#8dbaff" stroke-opacity=".2" stroke-width=".6"><title>电力调度 → 用电端｜分时购售电数据未提供</title></path><defs><lineargradient id="skgrad10" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#49aaff" stop-opacity=".52"></stop><stop offset="1" stop-color="#9caaff" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M764,121.175 C872,121.175 872,200.85 978,200.85 L978,225.15 C872,225.15 872,145.475 764,145.475 Z" data-tip="电力调度 → 充电设施｜终端充电 12.00 GWh/年" fill="url(#skgrad10)" stroke="#9caaff" stroke-opacity=".2" stroke-width=".6"><title>电力调度 → 充电设施｜终端充电 12.00 GWh/年</title></path><defs><lineargradient id="skgrad11" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#ffd167" stop-opacity=".52"></stop><stop offset="1" stop-color="#ffb94a" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M764,263.625 C872,263.625 872,295.35 978,295.35 L978,319.65 C872,319.65 872,287.925 764,287.925 Z" data-tip="余热 → 供热｜3.76 GWh/年" fill="url(#skgrad11)" stroke="#ffb94a" stroke-opacity=".2" stroke-width=".6"><title>余热 → 供热｜3.76 GWh/年</title></path><defs><lineargradient id="skgrad12" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#f2d580" stop-opacity=".52"></stop><stop offset="1" stop-color="#64ded0" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M764,287.925 C872,287.925 872,375.775 978,375.775 L978,412.225 C872,412.225 872,324.375 764,324.375 Z" data-tip="余热 → 吸收式制冷｜余热输入 8.12 GWh/年" fill="url(#skgrad12)" stroke="#64ded0" stroke-opacity=".2" stroke-width=".6"><title>余热 → 吸收式制冷｜余热输入 8.12 GWh/年</title></path><defs><lineargradient id="skgrad13" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#55e6c8" stop-opacity=".52"></stop><stop offset="1" stop-color="#36caba" stop-opacity=".32"></stop></lineargradient></defs><path class="sk-band" d="M764,461.525 C872,461.525 872,469.525 978,469.525 L978,492.475 C872,492.475 872,484.475 764,484.475 Z" data-tip="LNG 梯级利用 → 终端冷负荷｜年实供 1.0638 GWh/年" fill="url(#skgrad13)" stroke="#36caba" stroke-opacity=".2" stroke-width=".6"><title>LNG 梯级利用 → 终端冷负荷｜年实供 1.0638 GWh/年</title></path><g class="sk-node" data-tip="天然气｜243.54 万m³/年"><rect fill="#081e47" height="88" rx="6" stroke="#a0d854" stroke-width="1.2" width="125" x="20" y="58"></rect><rect fill="#a0d854" height="88" rx="3" width="8" x="20" y="58"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="82.5" y="92">天然气</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="82.5" y="116">243.54 万m³/年</text></g><g class="sk-node" data-tip="光伏发电｜11.50 GWh/年"><rect fill="#081e47" height="74" rx="6" stroke="#23c8f7" stroke-width="1.2" width="125" x="20" y="195"></rect><rect fill="#23c8f7" height="74" rx="3" width="8" x="20" y="195"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="82.5" y="224">光伏发电</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="82.5" y="248">11.50 GWh/年</text></g><g class="sk-node" data-tip="公共电网｜购电待接入"><rect fill="#081e47" height="70" rx="6" stroke="#7e9eff" stroke-width="1.2" width="125" x="20" y="318"></rect><rect fill="#7e9eff" height="70" rx="3" width="8" x="20" y="318"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="82.5" y="346">公共电网</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="82.5" y="370">购电待接入</text></g><g class="sk-node" data-tip="LNG 冷能｜1.1006 GWh/年"><rect fill="#081e47" height="76" rx="6" stroke="#2bdfc3" stroke-width="1.2" width="125" x="20" y="438"></rect><rect fill="#2bdfc3" height="76" rx="3" width="8" x="20" y="438"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="82.5" y="466">LNG 冷能</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="82.5" y="490">1.1006 GWh/年</text></g><g class="sk-node" data-tip="CCHP 联供｜电 10.56 GWh/年 · 热 11.88 GWh/年"><rect fill="#081e47" height="98" rx="6" stroke="#ffbc5c" stroke-width="1.2" width="127" x="323" y="58"></rect><rect fill="#ffbc5c" height="98" rx="3" width="8" x="323" y="58"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="386.5" y="91">CCHP 联供</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="111">电 10.56 GWh/年</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="131">热 11.88 GWh/年</text></g><g class="sk-node" data-tip="光伏逆变｜发电 11.50 GWh/年"><rect fill="#081e47" height="74" rx="6" stroke="#45d5fe" stroke-width="1.2" width="127" x="323" y="198"></rect><rect fill="#45d5fe" height="74" rx="3" width="8" x="323" y="198"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="386.5" y="227">光伏逆变</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="244">发电 11.50</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="264">GWh/年</text></g><g class="sk-node" data-tip="电网接入｜电量待接入"><rect fill="#081e47" height="78" rx="6" stroke="#8da8ff" stroke-width="1.2" width="127" x="323" y="315"></rect><rect fill="#8da8ff" height="78" rx="3" width="8" x="323" y="315"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="386.5" y="344">电网接入</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="368">电量待接入</text></g><g class="sk-node" data-tip="LNG 梯级利用｜利用路径"><rect fill="#081e47" height="78" rx="6" stroke="#41e2c6" stroke-width="1.2" width="127" x="323" y="436"></rect><rect fill="#41e2c6" height="78" rx="3" width="8" x="323" y="436"></rect><text fill="#f0faff" font-size="15" font-weight="700" text-anchor="middle" x="386.5" y="465">LNG 梯级利用</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="386.5" y="489">利用路径</text></g><g class="sk-node" data-tip="电力母线｜调度与储能"><rect fill="#081e47" height="98" rx="6" stroke="#31d4ff" stroke-width="1.2" width="124" x="640" y="58"></rect><rect fill="#31d4ff" height="98" rx="3" width="8" x="640" y="58"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="702" y="92">电力母线</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="702" y="117">调度与储能</text></g><g class="sk-node" data-tip="余热分配｜11.88 GWh/年"><rect fill="#081e47" height="98" rx="6" stroke="#ffcf70" stroke-width="1.2" width="124" x="640" y="245"></rect><rect fill="#ffcf70" height="98" rx="3" width="8" x="640" y="245"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="702" y="279">余热分配</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="702" y="304">11.88 GWh/年</text></g><g class="sk-node" data-tip="低温冷能｜实供 1.0638 GWh/年"><rect fill="#081e47" height="82" rx="6" stroke="#42d9c3" stroke-width="1.2" width="124" x="640" y="432"></rect><rect fill="#42d9c3" height="82" rx="3" width="8" x="640" y="432"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="702" y="466">低温冷能</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="702" y="486">实供 1.0638</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="702" y="506">GWh/年</text></g><g class="sk-node" data-tip="园区用电｜负荷口径待接入"><rect fill="#081e47" height="94" rx="6" stroke="#5fa9ff" stroke-width="1.2" width="172" x="962" y="58"></rect><rect fill="#5fa9ff" height="94" rx="3" width="8" x="962" y="58"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="1048" y="92">园区用电</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="1048" y="117">负荷口径待接入</text></g><g class="sk-node" data-tip="充电站｜12.00 GWh/年"><rect fill="#081e47" height="76" rx="6" stroke="#819fff" stroke-width="1.2" width="172" x="962" y="175"></rect><rect fill="#819fff" height="76" rx="3" width="8" x="962" y="175"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="1048" y="208">充电站</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="1048" y="233">12.00 GWh/年</text></g><g class="sk-node" data-tip="供热 / 热水｜3.76 GWh/年"><rect fill="#081e47" height="67" rx="6" stroke="#ffd173" stroke-width="1.2" width="172" x="962" y="274"></rect><rect fill="#ffd173" height="67" rx="3" width="8" x="962" y="274"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="1048" y="305">供热 / 热水</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="1048" y="329">3.76 GWh/年</text></g><g class="sk-node" data-tip="吸收式制冷｜余热输入 8.12 GWh/年"><rect fill="#081e47" height="60" rx="6" stroke="#6de0d1" stroke-width="1.2" width="172" x="962" y="364"></rect><rect fill="#6de0d1" height="60" rx="3" width="8" x="962" y="364"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="1048" y="393">吸收式制冷</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="1048" y="416">余热输入 8.12 GWh/年</text></g><g class="sk-node" data-tip="LNG 终端供冷｜实供 1.0638 GWh/年"><rect fill="#081e47" height="66" rx="6" stroke="#31dbc2" stroke-width="1.2" width="172" x="962" y="448"></rect><rect fill="#31dbc2" height="66" rx="3" width="8" x="962" y="448"></rect><text fill="#f0faff" font-size="16" font-weight="700" text-anchor="middle" x="1048" y="481">LNG 终端供冷</text><text fill="#a2d4f3" font-size="12" text-anchor="middle" x="1048" y="504">实供 1.0638 GWh/年</text></g></svg>
+<div class="cf">说明：桑基式流带借鉴所提供样例的视觉形式，不按统一能量尺度计算宽度。天然气为体积，储能为充放电吞吐，充电为用电负荷，不可相加。1.1006 GWh/年为LNG理论总冷能；终端实供为1.0638 GWh/年。</div>
+</div>
+<!-- 余热去向 + 光伏去向 -->
+<!-- 光伏去向表 -->
+
+
+<!-- 能耗 KPI -->
+<div class="kpi" style="margin-top:16px">
+<div class="kc" style="--mc:var(--blue)"><div class="l">CCHP 年发电</div><div class="v">10.56<span class="u">GWh</span></div><div class="n">年耗天然气 243.54 万 m³</div></div>
+<div class="kc" style="--mc:var(--blue-d)"><div class="l">光伏年发电</div><div class="v">11.50<span class="u">GWh</span></div><div class="n">园区屋顶光伏 · 自发自用</div></div>
+<div class="kc" style="--mc:var(--amber)"><div class="l">CCHP 年余热</div><div class="v">11.88<span class="u">GWh</span></div><div class="n">余热/发电 = 1.125（能量比，非效率）</div></div>
+<div class="kc" style="--mc:var(--teal)"><div class="l">吸收式制冷量</div><div class="v">8.12<span class="u">GWh</span></div><div class="n">占余热 <b>68.4%</b></div></div>
+<div class="kc" style="--mc:var(--teal)"><div class="l">余热综合利用率</div><div class="v">100.0<span class="u">%</span></div><div class="n">引擎口径：余热全部被利用</div></div>
+<div class="kc" style="--mc:var(--lime)"><div class="l">单位发电耗气</div><div class="v">230.6<span class="u">m³/MWh</span></div><div class="n">★ 纯比值，未折算热值</div></div>
+</div>
+<!-- 能耗明细表 -->
+<div class="tbl-scroll">
+<table class="dt">
+<colgroup><col style="width:42%"/><col style="width:22%"/><col style="width:36%"/></colgroup>
+<thead><tr><th class="k">能耗指标</th><th>数值</th><th>口径 / 说明</th></tr></thead>
+<tbody>
+<tr><td class="k">CCHP 年发电量 (GWh)</td><td>10.560</td><td class="k"><span class="dim2">燃气内燃机/轮机</span></td></tr>
+<tr><td class="k">CCHP 年耗天然气 (万 m³)</td><td>243.540</td><td class="k"><span class="dim2">低位热值口径</span></td></tr>
+<tr><td class="k">单位发电耗气 (m³/MWh)</td><td>230.62</td><td class="k"><span class="dim2">★ 纯比值</span></td></tr>
+<tr><td class="k">CCHP 年余热 (GWh)</td><td>11.880</td><td class="k"><span class="dim2">烟气 + 缸套水</span></td></tr>
+<tr><td class="k"><span class="dim2">　├ 吸收式制冷 (GWh)</span></td><td>8.120</td><td class="k"><span class="dim2">占余热 68.4%</span></td></tr>
+<tr><td class="k"><span class="dim2">　└ 其余余热 (GWh)</span></td><td>3.760</td><td class="k"><span class="dim2">供暖 / 生活热水</span></td></tr>
+<tr><td class="k">余热综合利用率 (%)</td><td>100.0</td><td class="k"><span class="dim2">引擎口径</span></td></tr>
+<tr><td class="k">光伏年发电 (GWh)</td><td>11.500</td><td class="k"><span class="dim2">屋顶光伏</span></td></tr>
+<tr><td class="k">储能年吞吐 (GWh)</td><td>2.400</td><td class="k"><span class="dim2">充放合计</span></td></tr>
+<tr><td class="k">充电站年充电量 (GWh)</td><td>12.000</td><td class="k"><span class="dim2">终端用电</span></td></tr>
+<tr><td class="k">LNG 冷能利用率 (%)</td><td>96.66</td><td class="k"><span class="dim2">梯级回收率</span></td></tr>
+<tr><td class="k">机械制冷补差缺口 (GWh)</td><td>0.0262</td><td class="k"><span class="dim2">利用率未达 100% 的缺口</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="note lime"><b>能耗口径</b>：本线是四条产线里<b>唯一「多能流」</b>的——同时有天然气、电、余热、冷能四种能流。图 2 中四个 GWh 数<b>不可相加</b>：CCHP 10.56 与光伏 11.50 是<b>发电量</b>，充电站 12.00 是<b>终端用电量</b>，储能 2.40 是<b>吞吐量</b>（充+放各算一次）。把四个数加起来得出「园区总能量」是错的。「单位发电耗气 230.6 m³/MWh」是纯比值，<b>未折算天然气热值</b>——要换算成效率还需引入热值假设，本页不引入。</div>
+</section><section class="mod">
+<div class="mh"><span class="dot" style="--mc:var(--amber)"></span><h2>回收期</h2><span class="note">静态回收期对比 · 供冷为整体拖累项</span></div>
+<div class="cbox" style="--mc:var(--amber)">
+<div class="ct"><span class="tag">图 3</span>各子系统静态回收期对比</div>
+<div class="cs">★ 供冷 7.15 年明显长于整体 4.17 年（＋2.98 年），是整体回收期的拖累项</div>
+<svg aria-label="各子系统静态回收期对比条形图" class="chart" role="img" viewbox="0 0 1160 300">
+<defs>
+<lineargradient id="pbAmber" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0" stop-color="#fbbf24"></stop><stop offset="1" stop-color="#f59e0b"></stop>
+</lineargradient>
+<lineargradient id="pbBlue" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0" stop-color="#38bdf8"></stop><stop offset="1" stop-color="#0ea5e9"></stop>
+</lineargradient>
+<lineargradient id="pbTeal" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0" stop-color="#2dd4bf"></stop><stop offset="1" stop-color="#14b8a6"></stop>
+</lineargradient>
+<lineargradient id="pbSlate" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0" stop-color="#94a3b8"></stop><stop offset="1" stop-color="#64748b"></stop>
+</lineargradient>
+</defs>
+<!-- 网格 -->
+<g>
+<line class="grid-ln" x1="150" x2="150" y1="44" y2="240"></line><text class="t-ax" text-anchor="middle" x="150" y="256">0</text>
+<line class="grid-ln" x1="385" x2="385" y1="44" y2="240"></line><text class="t-ax" text-anchor="middle" x="385" y="256">2</text>
+<line class="grid-ln" x1="620" x2="620" y1="44" y2="240"></line><text class="t-ax" text-anchor="middle" x="620" y="256">4</text>
+<line class="grid-ln" x1="855" x2="855" y1="44" y2="240"></line><text class="t-ax" text-anchor="middle" x="855" y="256">6</text>
+<line class="grid-ln" x1="1090" x2="1090" y1="44" y2="240"></line><text class="t-ax" text-anchor="middle" x="1090" y="256">8</text>
+</g>
+<!-- 参考线：整体 4.17 年 -->
+<line class="ref-ln" x1="639.9" x2="639.9" y1="40" y2="244"></line>
+<text class="t-sub" style="fill:#94a3b8;font-size:10px" x="647" y="34">整体 4.17 年</text>
+<!-- 条形 -->
+<g data-grp="pb">
+<rect class="bar" data-tip="供热 CCHP｜回收期 3.93 年｜低于整体（4.17）0.24 年" fill="url(#pbAmber)" height="24" rx="4" width="461.8" x="150" y="52"></rect>
+<rect class="bar" data-tip="供电 光储充｜回收期 4.11 年｜接近整体（4.17）" fill="url(#pbBlue)" height="24" rx="4" width="483" x="150" y="96"></rect>
+<rect class="bar" data-tip="供冷 LNG｜回收期 7.15 年｜高出整体（4.17）2.98 年，为拖累项" fill="url(#pbTeal)" height="24" rx="4" width="840" x="150" y="140"></rect>
+<rect class="bar" data-tip="整体（系统级联）｜回收期 4.17 年｜初始投资 ÷ 年净收益" fill="url(#pbSlate)" height="24" rx="4" width="489.9" x="150" y="184"></rect>
+</g>
+<text class="t-val" style="fill:#08131c" x="467" y="68">3.93</text>
+<text class="t-val" style="fill:#08131c" x="488" y="112">4.11</text>
+<text class="t-val" style="fill:#08131c" x="846" y="156">7.15</text>
+<text class="t-val" style="fill:#08131c" x="496" y="200">4.17</text>
+<text class="t-sub" style="fill:#fb7185;font-size:10px;font-weight:700" text-anchor="middle" x="1085" y="133">高出整体 ＋2.98 年</text>
+<text class="t-lab" text-anchor="end" x="140" y="64">供热 CCHP 冷热电联供</text>
+<text class="t-lab" text-anchor="end" x="140" y="108">供电 光储充一体化</text>
+<text class="t-lab" text-anchor="end" x="140" y="152">供冷 LNG 冷能梯级利用</text>
+<text class="t-lab" text-anchor="end" x="140" y="196">整体（系统级联）</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="620" y="292">回收期（年）</text>
+</svg>
+</div>
+<!-- 图11 光储充内部三项回收期 -->
+<!-- 光储充内部拆分表 -->
+
+<div class="note" style="--mc:var(--red);margin-top:14px"><b>本节的要点</b>：图 3 里「供电 光储充 <b>4.11 年</b>」是三项的加权合成值，它把<b>储能单项 10.50 年</b>这条短板掩盖了（差 2.56 倍）——储能占光储充投资 <b>23.7%</b>，却只贡献 <b>9.3%</b> 净收益；对照充电站：投资仅 550 万元（10.4%）即取得 430 万元净收益。<b>单看整体回收期会得出「供电是次优项」的结论，拆开后才知道真正的拖累是储能。</b></div>
+<div class="note warn"><b>结构提示</b>：本系统无 IRR / NPV 口径（引擎未输出，<b>不是报缺而是不适用</b>）。原因是综合能源为多系统级联，收益口径为「各子系统净收益之和」，与单系统的现金流 IRR 定义不同。</div>
+</section><section class="mod">
+<div class="mh"><span class="dot" style="--mc:var(--teal)"></span><h2>运行规模</h2><span class="note">能量 / 电量规模 · GWh 口径</span></div>
+<div class="cbox" style="--mc:var(--teal)">
+<div class="ct"><span class="tag">图 4</span>各子系统能量 / 电量规模（GWh/年）</div>
+<div class="cs">★ 六项分五类口径：发电量（CCHP 与光伏）、余热量、制冷量、用电量、吞吐量，不可直接相加；LNG 冷能利用率 96.7%，机械制冷补差缺口仅 0.0262 GWh</div>
+<svg aria-label="各子系统能量电量规模水平条形图" class="chart" role="img" viewbox="0 0 1160 360">
+<defs>
+<lineargradient id="s1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#7dd3fc"></stop><stop offset="1" stop-color="#38bdf8"></stop></lineargradient>
+<lineargradient id="s2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fcd34d"></stop><stop offset="1" stop-color="#f59e0b"></stop></lineargradient>
+<lineargradient id="s3" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#5eead4"></stop><stop offset="1" stop-color="#14b8a6"></stop></lineargradient>
+<lineargradient id="s4" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#38bdf8"></stop><stop offset="1" stop-color="#0284c7"></stop></lineargradient>
+<lineargradient id="s5" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#93c5fd"></stop><stop offset="1" stop-color="#3b82f6"></stop></lineargradient>
+<lineargradient id="s6" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#67e8f9"></stop><stop offset="1" stop-color="#06b6d4"></stop></lineargradient>
+</defs>
+<!-- 网格 -->
+<g>
+<line class="grid-ln" x1="150" x2="150" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="150" y="284">0</text>
+<line class="grid-ln" x1="338" x2="338" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="338" y="284">2.5</text>
+<line class="grid-ln" x1="526" x2="526" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="526" y="284">5</text>
+<line class="grid-ln" x1="714" x2="714" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="714" y="284">7.5</text>
+<line class="grid-ln" x1="902" x2="902" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="902" y="284">10</text>
+<line class="grid-ln" x1="1090" x2="1090" y1="44" y2="262"></line><text class="t-ax" text-anchor="middle" x="1090" y="284">12.5</text>
+</g>
+<!-- 条形 -->
+<g data-grp="scale">
+<rect class="bar" data-tip="CCHP 发电量｜10.56 GWh/年｜燃气内燃机/轮机，年耗气 243.54 万 m³" fill="url(#s1)" height="24" rx="4" width="794" x="150" y="48"></rect>
+<rect class="bar" data-tip="CCHP 余热量｜11.88 GWh/年｜烟气 + 缸套水，余热/发电 = 1.125" fill="url(#s2)" height="24" rx="4" width="893.4" x="150" y="86"></rect>
+<rect class="bar" data-tip="吸收式制冷量｜8.12 GWh/年｜占余热 68.4%" fill="url(#s3)" height="24" rx="4" width="610.6" x="150" y="124"></rect>
+<rect class="bar" data-tip="光伏发电量｜11.50 GWh/年｜屋顶光伏，自发自用" fill="url(#s4)" height="24" rx="4" width="864.8" x="150" y="162"></rect>
+<rect class="bar" data-tip="充电站充电量｜12.00 GWh/年｜终端用电量" fill="url(#s5)" height="24" rx="4" width="902.4" x="150" y="200"></rect>
+<rect class="bar" data-tip="储能吞吐量｜2.40 GWh/年｜充放合计，不可与发电量相加" fill="url(#s6)" height="24" rx="4" width="180.5" x="150" y="238"></rect>
+</g>
+<text class="t-val" x="800" y="66">10.56</text>
+<text class="t-val" x="899" y="104">11.88</text>
+<text class="t-val" x="616" y="142">8.12</text>
+<text class="t-val" x="870" y="180">11.50</text>
+<text class="t-val" x="908" y="218">12.00</text>
+<text class="t-val" x="186" y="256">2.40</text>
+<text class="t-lab" text-anchor="end" x="140" y="60">CCHP 发电</text>
+<text class="t-lab" text-anchor="end" x="140" y="98">CCHP 余热</text>
+<text class="t-lab" text-anchor="end" x="140" y="136">吸收式制冷</text>
+<text class="t-lab" text-anchor="end" x="140" y="174">光伏发电</text>
+<text class="t-lab" text-anchor="end" x="140" y="212">充电站充电</text>
+<text class="t-lab" text-anchor="end" x="140" y="250">储能吞吐</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="620" y="350">GWh / 年</text>
+</svg>
+</div>
+<div class="note"><b>口径说明（引擎自述）</b>：① 年碳减排量当前<b>仅核算 CCHP 侧</b>，未计入光伏发电替代电网、LNG 冷能替代电制冷、储充移峰等减碳量 ⇒ <b>实际减碳量高于该值</b>；② 静态回收期 ＝ 初始投资 ÷ 年净收益，<b>未考虑资金时间价值与贷款利率</b>；③ 边界敏感变量（LNG 冷价成立前提、峰谷电价、LNG 实际气化量）建议另行做情景推演。</div>
+<div class="foot">综合能源托管 · 结果可视化 v3（新增 LNG 冷能梯级利用与 CCHP 收益/成本/碳核算）—— 数据核对：672.33 ＋ 1,292.12 ＋ 83.90 ＝ 2,048.35 万元/年；8,550 ÷ 2,048.35 ≈ 4.17 年；冷能净收益 104.42 − 0.52 − 20 ＝ 83.90 万元/年。配色语义：青蓝＝电，琥珀＝热，青绿＝冷，黄绿＝燃料。
+<!-- ══════════ 模块 6 · CCHP 收益—成本—碳核算 ══════════ -->
+</div></section></section><section aria-label="02 冷热电联供系统" class="module-group" id="module-cchp"><div class="group-title"><h2>02 冷热电联供系统</h2><span>能源转换 / 余热利用 / 成本与收益 / 碳核算</span></div><section class="mod" id="cchp-module"><div class="mh"><span class="dot" style="--mc:var(--amber)"></span><h2>CCHP 冷热电联供</h2><span class="note">能源转换 · 余热利用 · 成本与收益 · 碳核算</span></div>
+<div class="kpi">
+<div class="kc" style="--mc:var(--blue)"><div class="l">CCHP 年发电</div><div class="v">10.56<span class="u">GWh</span></div><div class="n">自发自用 0.75 元/kWh → 792.00 万元/年</div></div>
+<div class="kc" style="--mc:var(--amber)"><div class="l">CCHP 年余热</div><div class="v">11.88<span class="u">GWh</span></div><div class="n">吸收式制冷 8.12 ＋ 供暖/热水 3.76</div></div>
+<div class="kc" style="--mc:var(--teal)"><div class="l">余热综合利用率</div><div class="v">100.0<span class="u">%</span></div><div class="n">全部余热均有去向，无放空</div></div>
+<div class="kc" style="--mc:var(--amber-d)"><div class="l">CCHP 年净收益</div><div class="v">672.33<span class="u">万元/年</span></div><div class="n">收入 1560.06 − 燃料 840.21 − 运维 47.52</div></div>
+<div class="kc" style="--mc:var(--slate)"><div class="l">静态回收期</div><div class="v">3.93<span class="u">年</span></div><div class="n">低于系统整体 4.17 年 0.24 年</div></div>
+<div class="kc" style="--mc:var(--cyan)"><div class="l">年碳量（仅 CCHP 侧）</div><div class="v">2,193.72<span class="u">tCO₂</span></div><div class="n">碳量不可按收益占比分摊<br>碳强度双口径见图 7</div></div>
+</div>
+<div class="note warn"><b>数据统计边界</b>：本模块<b>发电量 10.56 GWh/年</b> 与 <b>余热 11.88 GWh/年</b>同源于一份燃料输入，分属「电产出」与「热副产」，<b>不可相加</b>；「单位发电耗气 230.6 m³/MWh」为<b>纯比值，未折算天然气热值</b>；<b>年碳量 2,193.72 tCO₂ 仅覆盖 CCHP 侧</b>（观测 <code>joint_carbon_t</code> 与 <code>cchp_carbon_t</code> 同值 ⇒ 当前核算尚未覆盖光伏 / LNG / 储充），故<b>不可按收益占比向下分摊</b>，且尚未计入光伏替代电网、LNG 冷能替代电制冷、储充移峰三项减碳来源。</div>
+
+<section class="mod chart-cluster"><div class="mh"><span class="dot"></span><h2>CCHP 余热去向</h2><span class="note">图 5 · CCHP 余热的供冷与供热去向</span></div><div class="chart-single"><div class="cbox" style="--mc:var(--teal)">
+<div class="ct"><span class="tag">图 5</span>CCHP 余热梯级利用去向</div>
+<div class="cs">年余热 11.88 GWh → 吸收式制冷 8.12（68.4%）＋ 供暖/热水 3.76（31.6%）</div>
+<svg aria-label="图5数据分布横向比例条形图" class="chart" role="img" viewbox="0 0 560 152"><text fill="#b5dcf9" font-size="13" x="20" y="27">CCHP 余热分配 · 合计 11.88 GWh/年</text><text fill="#d7efff" font-size="13" x="20" y="61">吸收式制冷</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="44"></rect><rect class="seg" data-tip="吸收式制冷｜8.12 GWh/年｜68.4%" fill="#38eac4" height="13" rx="6" width="205.1" x="178" y="44"></rect><text fill="#38eac4" font-size="12" font-weight="700" x="485" y="56">68.4%</text><text fill="#a8cee9" font-size="11" x="178" y="76">8.12 GWh/年</text><text fill="#d7efff" font-size="13" x="20" y="123">供暖 / 生活热水</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="106"></rect><rect class="seg" data-tip="供暖 / 生活热水｜3.76 GWh/年｜31.6%" fill="#ffcc59" height="13" rx="6" width="94.9" x="178" y="106"></rect><text fill="#ffcc59" font-size="12" font-weight="700" x="485" y="118">31.6%</text><text fill="#a8cee9" font-size="11" x="178" y="138">3.76 GWh/年</text></svg>
+</div></div></section><div class="mh"><span class="dot" style="--mc:var(--blue-d)"></span><h2>CCHP 收益 — 成本 — 碳核算</h2><span class="note">四类收益 · 瀑布闭合 · 碳强度双口径</span></div>
+<div class="grid2">
+<!-- 图6 CCHP 四类收益构成 -->
+<div class="cbox" style="--mc:var(--blue)">
+<div class="ct"><span class="tag">图 6</span>CCHP 四类收益构成</div>
+<div class="cs">合计 1560.06 万元/年 ＝ 792.00 ＋ 649.60 ＋ 98.72 ＋ 19.74；自发自用 50.8%、供冷 41.6%、生活热水 6.3%、碳收益 1.3%</div>
+<svg aria-label="图6数据分布横向比例条形图" class="chart" role="img" viewbox="0 0 560 280"><text fill="#b5dcf9" font-size="13" x="20" y="27">CCHP 收益构成 · 合计 1560.06 万元/年</text><text fill="#d7efff" font-size="13" x="20" y="61">自发自用电力</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="44"></rect><rect class="seg" data-tip="自发自用电力｜792 万元/年｜50.8%" fill="#29d9ff" height="13" rx="6" width="152.3" x="178" y="44"></rect><text fill="#29d9ff" font-size="12" font-weight="700" x="485" y="56">50.8%</text><text fill="#a8cee9" font-size="11" x="178" y="76">792 万元/年</text><text fill="#d7efff" font-size="13" x="20" y="123">供冷收益</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="106"></rect><rect class="seg" data-tip="供冷收益｜649.6 万元/年｜41.6%" fill="#38eac4" height="13" rx="6" width="124.9" x="178" y="106"></rect><text fill="#38eac4" font-size="12" font-weight="700" x="485" y="118">41.6%</text><text fill="#a8cee9" font-size="11" x="178" y="138">649.6 万元/年</text><text fill="#d7efff" font-size="13" x="20" y="185">生活热水</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="168"></rect><rect class="seg" data-tip="生活热水｜98.72 万元/年｜6.3%" fill="#ffcc59" height="13" rx="6" width="19.0" x="178" y="168"></rect><text fill="#ffcc59" font-size="12" font-weight="700" x="485" y="180">6.3%</text><text fill="#a8cee9" font-size="11" x="178" y="200">98.72 万元/年</text><text fill="#d7efff" font-size="13" x="20" y="247">碳收益</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="230"></rect><rect class="seg" data-tip="碳收益｜19.74 万元/年｜1.3%" fill="#8eafff" height="13" rx="6" width="3.8" x="178" y="230"></rect><text fill="#8eafff" font-size="12" font-weight="700" x="485" y="242">1.3%</text><text fill="#a8cee9" font-size="11" x="178" y="262">19.74 万元/年</text></svg>
+<div class="cf">四类收益合计与 图 8 总收益柱逐位相同（1560.06 万元/年）；碳收益 19.74 万元/年为四类中最小项</div>
+</div>
+<!-- 图7 碳强度两个分母 -->
+<div class="cbox" style="--mc:var(--lime)">
+<div class="ct"><span class="tag">图 7</span>碳强度的两个分母口径</div>
+<div class="cs">分子相同（年碳量 2193.72 tCO₂）、分母不同 ⇒ 相差 4.17 倍，两者不可混用；分母取系统级口径</div>
+<svg aria-label="碳强度两个分母口径条形图" class="chart" role="img" viewbox="0 0 560 280">
+<defs>
+<lineargradient id="n1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#38bdf8"></stop><stop offset="1" stop-color="#0ea5e9"></stop></lineargradient>
+<lineargradient id="n2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#94a3b8"></stop><stop offset="1" stop-color="#5b7794"></stop></lineargradient>
+</defs>
+<g>
+<line class="grid-ln" x1="108" x2="108" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="108" y="208">0</text>
+<line class="grid-ln" x1="193.6" x2="193.6" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="193.6" y="208">0.25</text>
+<line class="grid-ln" x1="279.2" x2="279.2" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="279.2" y="208">0.5</text>
+<line class="grid-ln" x1="364.8" x2="364.8" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="364.8" y="208">0.75</text>
+<line class="grid-ln" x1="450.4" x2="450.4" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="450.4" y="208">1</text>
+<line class="grid-ln" x1="536" x2="536" y1="22" y2="190"></line><text class="t-ax" text-anchor="middle" x="536" y="208">1.25</text>
+</g>
+<g data-grp="carbon">
+<rect class="bar" data-tip="每万元净收益碳强度｜1.0710 tCO₂/万元｜2193.72 ÷ 系统年净收益 2048.35 万元" fill="url(#n1)" height="22" rx="3" width="366.7" x="108" y="48"></rect>
+<rect class="bar" data-tip="每万元初始投资碳强度｜0.2566 tCO₂/万元｜2193.72 ÷ 系统投资 8550 万元" fill="url(#n2)" height="22" rx="3" width="87.9" x="108" y="142"></rect>
+</g>
+<text class="t-val" x="480.7" y="63">1.0710</text>
+<text class="t-val" x="201.9" y="157">0.2566</text>
+<text class="t-lab" text-anchor="end" x="100" y="63">每万元净收益</text>
+<text class="t-lab" text-anchor="end" x="100" y="157">每万元初始投资</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="322" y="262">tCO₂/万元 ｜ 分母① ＝ 系统年净收益 2048.35 万元；分母② ＝ 系统初始投资 8550 万元</text>
+</svg>
+<div class="cf">1.0710 ÷ 0.2566 ≈ 4.17 倍；当前碳核算仅覆盖 CCHP 侧，故本页碳强度为偏保守的上界</div>
+</div>
+</div>
+<!-- 图8 CCHP 收益-成本-净收益瀑布 -->
+<div class="figure-table-row" style="margin-top:16px">
+<div class="cbox" style="--mc:var(--teal)">
+<div class="ct"><span class="tag">图 8</span>CCHP「收益 − 成本 ＝ 净收益」瀑布</div>
+<div class="cs">1560.06 − 840.21 − 47.52 ＝ 672.33 万元/年；燃料占收入 53.86%、运维占 3.05%、净收益占 43.10%</div>
+<svg aria-label="CCHP收益成本净收益瀑布图" class="chart" role="img" viewbox="0 0 560 380.40">
+<defs>
+<lineargradient id="v1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7dd3fc"></stop><stop offset="1" stop-color="#0ea5e9"></stop></lineargradient>
+<lineargradient id="v2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fcd34d"></stop><stop offset="1" stop-color="#d97706"></stop></lineargradient>
+<lineargradient id="v3" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#94a3b8"></stop><stop offset="1" stop-color="#5b7794"></stop></lineargradient>
+<lineargradient id="v4" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5eead4"></stop><stop offset="1" stop-color="#0d9488"></stop></lineargradient>
+</defs>
+<g>
+<line class="grid-ln" x1="51.3" x2="534" y1="308.31" y2="308.31"></line><text class="t-ax" text-anchor="end" x="45.5" y="312.48">0</text>
+<line class="grid-ln" x1="51.3" x2="534" y1="236.17" y2="236.17"></line><text class="t-ax" text-anchor="end" x="45.5" y="240.34">500</text>
+<line class="grid-ln" x1="51.3" x2="534" y1="164.02" y2="164.02"></line><text class="t-ax" text-anchor="end" x="45.5" y="168.19">1,000</text>
+<line class="grid-ln" x1="51.3" x2="534" y1="91.88" y2="91.88"></line><text class="t-ax" text-anchor="end" x="45.5" y="96.05">1,500</text>
+<line class="grid-ln" x1="51.3" x2="534" y1="19.73" y2="19.73"></line><text class="t-ax" text-anchor="end" x="45.5" y="23.9">2,000</text>
+<line class="axis-ln" x1="51.3" x2="51.3" y1="19.73" y2="308.31"></line>
+</g>
+<!-- 连接虚线 -->
+<line class="grid-ln" stroke-dasharray="3 2" x1="145.5" x2="198.4" y1="83.22" y2="83.22"></line>
+<line class="grid-ln" stroke-dasharray="3 2" x1="265.8" x2="319.5" y1="204.53" y2="204.53"></line>
+<line class="grid-ln" stroke-dasharray="3 2" x1="386.9" x2="439.8" y1="211.26" y2="211.26"></line>
+<g data-grp="wf">
+<rect class="bar" data-tip="总收益｜1560.06 万元/年｜四类收益之和（自发自用＋供冷＋热水＋碳）" fill="url(#v1)" height="225.09" rx="3" width="67.5" x="77.8" y="83.22"></rect>
+<rect class="bar" data-tip="减：燃料成本｜−840.21 万元/年｜243.54 万 m³ × 3.45 元/m³｜占收入 53.86%" fill="url(#v2)" height="121.2" rx="3" width="67.5" x="198.5" y="83.22"></rect>
+<rect class="bar" data-tip="减：运维成本｜−47.52 万元/年｜10.56 GWh × 0.045 元/kWh｜占收入 3.05%" fill="url(#v3)" height="6.73" rx="3" width="67.5" x="319.2" y="204.53"></rect>
+<rect class="bar" data-tip="CCHP 年净收益｜672.33 万元/年｜与第一节 KPI 及表格逐位相同（同源观测 cchp_net_wan）" fill="url(#v4)" height="97.05" rx="3" width="67.5" x="439.9" y="211.26"></rect>
+</g>
+<text class="t-val" text-anchor="middle" x="111.5" y="76.81">1560.06</text>
+<text class="t-val" text-anchor="middle" x="232.5" y="76.81">−840.21</text>
+<text class="t-val" style="font-size:11px" text-anchor="middle" x="352.8" y="198.22">−47.52</text>
+<text class="t-val" text-anchor="middle" x="473.8" y="204.53">672.33</text>
+<text class="t-lab" text-anchor="middle" x="111.5" y="327.02">总收益</text>
+<text class="t-lab" text-anchor="middle" x="232.5" y="327.02">燃料成本</text>
+<text class="t-lab" text-anchor="middle" x="352.8" y="327.02">运维成本</text>
+<text class="t-lab" text-anchor="middle" x="473.8" y="327.02">净收益</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="292.7" y="366.03">逐项扣减（自左向右）｜瀑布终点 672.33 与第一节「供热 CCHP」数值完全相同——同源而非巧合</text>
+</svg>
+</div>
+<!-- CCHP 核算表 -->
+<div class="cbox" style="--mc:var(--blue)">
+<div class="ct">CCHP 收益 — 成本 — 净收益核算</div>
+<div class="tbl-scroll">
+<table class="dt" style="margin-top:14px">
+<colgroup><col style="width:28%"/><col style="width:18%"/><col style="width:14%"/><col style="width:40%"/></colgroup>
+<thead><tr><th class="k">项目</th><th>金额（万元/年）</th><th>占收入</th><th>算式 / 依据</th></tr></thead>
+<tbody>
+<tr><td class="k">CCHP 年收益</td><td>1560.06</td><td>100.00%</td><td class="k"><span class="dim2">＝ 四类收益之和</span></td></tr>
+<tr><td class="k">　├ 自发自用</td><td>792.00</td><td>50.77%</td><td class="k"><span class="dim2">10.56 GWh × 0.75 元/kWh（报告发电量 × 回显电价）</span></td></tr>
+<tr><td class="k">　├ 供冷</td><td>649.60</td><td>41.64%</td><td class="k"><span class="dim2">8.12 GWh × 0.80 元/kWh冷（报告冷量 × 源码冷价）</span></td></tr>
+<tr><td class="k">　├ 生活热水</td><td>98.72</td><td>6.33%</td><td class="k"><span class="dim2">残差；与引擎 rev_hw 98.5702 万元相差 0.1464（容差 0.8197）</span></td></tr>
+<tr><td class="k">　├ 碳收益</td><td>19.74</td><td>1.27%</td><td class="k"><span class="dim2">2193.72 tCO₂ × 90 元/t（观测碳量 × 回显碳价）</span></td></tr>
+<tr><td class="k">减：燃料成本</td><td>−840.21</td><td>53.86%</td><td class="k"><span class="dim2">243.54 万 m³ × 3.45 元/m³（两个因子都是现网值）</span></td></tr>
+<tr><td class="k">减：运维成本</td><td>−47.52</td><td>3.05%</td><td class="k"><span class="dim2">10.56 GWh × 0.045 元/kWh（源码常量）</span></td></tr>
+<tr class="tot"><td class="k">＝ CCHP 年净收益</td><td>672.33</td><td>43.10%</td><td class="k"><span class="dim2">＝ 观测 cchp_net_wan，与第一节图表逐位相同</span></td></tr>
+</tbody>
+</table>
+</div></div>
+</div>
+
+<div class="note"><b>本章的取数纪律（为什么不用引擎值）</b>：本章<b>每一格都只由现网值算出</b>，可逐格复算——① 燃料 ＝ 报告耗气 243.54 万 m³ × 回显气价 3.45 元/m³ ＝ <b>840.21</b> 万元；② 运维 ＝ 报告发电 10.56 GWh × 0.045 元/kWh ＝ <b>47.52</b> 万元；③ 碳收益刻意采用观测碳量 2193.72 tCO₂ × 回显碳价 90 元/t。<b>之所以不直调引擎</b>：本地气价常量 10.50 ≠ 平台入参 3.45，且折算热值校准到 10.84 kWh/m³ 后，引擎净收益仍高出 <b>4.92 万元</b>、碳量仍高出 <b>546.43 tCO₂（24.9%）</b> ⇒ <b>碳侧存在未识别参数</b>，无法由现有观测唯一识别。若直接采用引擎值，本章的数会与第一节的观测值对不上。唯一<b>残差项</b>是「生活热水 98.72 万元」，由「收入 − 其余三源」倒算，与引擎独立算出的 rev_hw <b>98.57 万元</b> 相差 <b>0.1464 万元</b>——落在「参与量两位显示的舍入传播上界 0.8197 万元」之内，互相印证。</div>
+<div class="note" style="--note-bg:#1a1a22;--note-br:#b08a4a;--note-bd:#2c3340;--note-brk:#e0c48a;"><b>碳核算的三条边界（务必留意）</b>：① <b>减碳量不可按收益分摊</b>——观测里 <code>joint_carbon_t</code>（全系统 2193.72 tCO₂）与 <code>cchp_carbon_t</code>（CCHP 侧 2193.72 tCO₂）<b>数值完全相同</b>，即当前碳核算<b>只覆盖 CCHP 侧</b>。换言之：CCHP 以 32.82% 的收益占比，却承担了 <b>100%</b> 的碳量——若反过来按收益占比分摊，只会得到 720.04 tCO₂ 这种<b>无依据的数</b>，本页不这样做。② 因此图 7 的分母取<b>系统级</b>净收益（<b>2048.35</b> 万元）与<b>系统级</b>投资（<b>8550</b> 万元）——分子与分母口径一致，不混用子系统数。③ 尚未计入的减碳来源共 3 项（光伏发电替代电网 / LNG 冷能替代电制冷 / 储充移峰），故本页碳强度是<b>偏保守的上界</b>：真实碳强度只会更低。</div>
+</section></section><section aria-label="03 光储充一体化系统" class="module-group" id="module-psc"><div class="group-title"><h2>03 光储充一体化系统</h2><span>光伏 / 储能 / 充电 / 能耗协同 / 经济性</span></div><section class="mod" id="pv-storage-charge"><div class="mh"><span class="dot" style="--mc:var(--cyan)"></span><h2>光储充一体化系统</h2><span class="note">光伏 · 储能 · 充电 · 协同 · 经济性</span></div>
+<div aria-label="光储充业务切换" class="psc-tabs" role="tablist"><button class="selected" data-tab="pv" role="tab">光伏发电</button><button data-tab="storage" role="tab">储能运行</button><button data-tab="charging" role="tab">充电设施</button><button data-tab="coord" role="tab">协同分析</button><button data-tab="economy" role="tab">经济效益</button></div>
+<div aria-live="polite" id="psc-content"></div>
+<div class="note warn"><b>数据统计边界</b>：光伏 11.50 GWh/年为发电量；储能 2.40 GWh/年为充放电吞吐合计；充电站 12.00 GWh/年为终端用电量，三者不可当作净发电量相加。储能 SOC、充放电效率及实时功率曲线未由源文件提供，暂不填入臆造数值。</div><section class="mod chart-cluster"><div class="mh"><span class="dot"></span><h2>光储充专业分析图表</h2><span class="note">图 9 · 图 10 · 图 11</span></div><div class="energy-figure-pairs"><div class="figure-table-row"><div class="cbox" style="--mc:var(--midblue)">
+<div class="ct"><span class="tag">图 9</span>供电子系统内部收益拆分</div>
+<div class="cs">光伏 742.12 ＋ 储能 120.00 ＋ 充电站 430.00 ＝ 1,292.12 万元/年（切勿重复计入）</div>
+<svg aria-label="供电子系统内部收益拆分柱状图" class="chart" role="img" viewbox="0 0 560 191.1">
+<defs>
+<lineargradient id="gPV" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#7dd3fc"></stop><stop offset="1" stop-color="#38bdf8"></stop>
+</lineargradient>
+<lineargradient id="gCY" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#67e8f9"></stop><stop offset="1" stop-color="#22d3ee"></stop>
+</lineargradient>
+<lineargradient id="gMB" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0" stop-color="#93c5fd"></stop><stop offset="1" stop-color="#60a5fa"></stop>
+</lineargradient>
+</defs>
+<!-- 网格 -->
+<g>
+<line class="grid-ln" x1="70" x2="540" y1="145" y2="145"></line><text class="t-ax" text-anchor="end" x="62" y="147.3">0</text>
+<line class="grid-ln" x1="70" x2="540" y1="112.02" y2="112.02"></line><text class="t-ax" text-anchor="end" x="62" y="114.32">200</text>
+<line class="grid-ln" x1="70" x2="540" y1="79.05" y2="79.05"></line><text class="t-ax" text-anchor="end" x="62" y="81.35">400</text>
+<line class="grid-ln" x1="70" x2="540" y1="46.07" y2="46.07"></line><text class="t-ax" text-anchor="end" x="62" y="48.37">600</text>
+<line class="grid-ln" x1="70" x2="540" y1="13.09" y2="13.09"></line><text class="t-ax" text-anchor="end" x="62" y="15.39">800</text>
+<line class="axis-ln" x1="70" x2="70" y1="15.8" y2="145"></line>
+</g>
+<!-- 柱：光伏742.12 / 充电站430 / 储能120 -->
+<g data-grp="bar2">
+<rect class="bar" data-tip="光伏｜742.12 万元/年｜占供电 57.4%｜回收期约 3.6 年" fill="url(#gPV)" height="122.3" rx="4" width="48" x="197" y="22.7"></rect>
+<rect class="bar" data-tip="充电站｜430.00 万元/年｜占供电 33.3%" fill="url(#gMB)" height="70.9" rx="4" width="48" x="281" y="74.1"></rect>
+<rect class="bar" data-tip="储能｜120.00 万元/年｜占供电 9.3%" fill="url(#gCY)" height="19.8" rx="4" width="48" x="365" y="125.2"></rect>
+</g>
+<text class="t-val" text-anchor="middle" x="221" y="18.4">742</text>
+<text class="t-val" text-anchor="middle" x="305" y="69.8">430</text>
+<text class="t-val" text-anchor="middle" x="389" y="121.3">120</text>
+<text class="t-sub" style="font-size:10px;fill:#08131c;font-weight:700" text-anchor="middle" x="221" y="31.6">57.4%</text>
+<text class="t-sub" style="font-size:10px;fill:#08131c;font-weight:700" text-anchor="middle" x="305" y="83">33.3%</text>
+<text class="t-sub" style="font-size:10px;fill:#08131c;font-weight:700" text-anchor="middle" x="389" y="134.5">9.3%</text>
+<text class="t-lab" text-anchor="middle" x="221" y="159.5">光伏</text>
+<text class="t-lab" text-anchor="middle" x="305" y="159.5">充电站</text>
+<text class="t-lab" text-anchor="middle" x="389" y="159.5">储能</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="end" x="540" y="179.3">单位：万元/年</text>
+</svg>
+</div><div class="cbox" style="--mc:var(--cyan)"><div class="ct">光储充投资与收益组成</div><div class="tbl-scroll">
+<table class="dt" style="margin-top:14px">
+<colgroup><col style="width:22%"/><col style="width:17%"/><col style="width:13%"/><col style="width:17%"/><col style="width:13%"/><col style="width:18%"/></colgroup>
+<thead><tr><th class="k">组成</th><th>年净收益（万元/年）</th><th>收益占比</th><th>初始投资（万元）</th><th>投资占比</th><th>回收期（年）</th></tr></thead>
+<tbody>
+<tr><td class="k">光伏</td><td>742.12</td><td>57.4%</td><td>3,500.00</td><td>65.9%</td><td>4.72</td></tr>
+<tr><td class="k">储能</td><td>120.00</td><td>9.3%</td><td>1,260.00</td><td>23.7%</td><td>10.50</td></tr>
+<tr><td class="k">充电站</td><td>430.00</td><td>33.3%</td><td>550.00</td><td>10.4%</td><td>1.28</td></tr>
+<tr class="tot"><td class="k">光储充合计</td><td>1,292.12</td><td>100.0%</td><td>5,310.00</td><td>100.0%</td><td>4.11</td></tr>
+</tbody>
+</table>
+</div></div></div><div class="figure-table-row"><div class="cbox" style="--mc:var(--blue)">
+<div class="ct"><span class="tag">图 10</span>光伏发电去向：自发自用 vs 余电上网</div>
+<div class="cs">年发电 11.500 GWh ＝ 自用 9.775（85.0%）＋ 上网 1.725（15.0%）；自用单价 0.75 是上网 0.40 的 1.88 倍</div>
+<svg aria-label="图10数据分布横向比例条形图" class="chart" role="img" viewbox="0 -15.7 560 243.23"><text fill="#b5dcf9" font-size="13" x="20" y="21">光伏发电去向 · 合计 11.50 GWh/年</text><text fill="#d7efff" font-size="13" x="20" y="79">光伏自发自用</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="62"></rect><rect class="seg" data-tip="光伏自发自用｜9.775 GWh/年｜85.0%" fill="#29d9ff" height="13" rx="6" width="255.0" x="178" y="62"></rect><text fill="#29d9ff" font-size="12" font-weight="700" x="485" y="74">85.0%</text><text fill="#a8cee9" font-size="11" x="178" y="94">9.775 GWh/年</text><text fill="#d7efff" font-size="13" x="20" y="187">余电上网</text><rect fill="#0d3567" height="13" rx="6" width="300" x="178" y="170"></rect><rect class="seg" data-tip="余电上网｜1.725 GWh/年｜15.0%" fill="#8eafff" height="13" rx="6" width="45.0" x="178" y="170"></rect><text fill="#8eafff" font-size="12" font-weight="700" x="485" y="182">15.0%</text><text fill="#a8cee9" font-size="11" x="178" y="202">1.725 GWh/年</text></svg>
+
+</div><div class="cbox" style="--mc:var(--cyan)"><div class="ct">光伏发电量去向明细</div><div class="tbl-scroll">
+<table class="dt" style="margin-top:14px">
+<colgroup><col style="width:30%"/><col style="width:14%"/><col style="width:12%"/><col style="width:16%"/><col style="width:16%"/><col style="width:12%"/></colgroup>
+<thead><tr><th class="k">光伏电量去向</th><th>电量（GWh）</th><th>占比</th><th>单价（元/kWh）</th><th>收益（万元/年）</th><th>口径</th></tr></thead>
+<tbody>
+<tr><td class="k">光伏自发自用</td><td>9.775</td><td>85.0%</td><td>0.75</td><td>733.12</td><td class="k"><span class="dim2">抵扣购电</span></td></tr>
+<tr><td class="k">余电上网</td><td>1.725</td><td>15.0%</td><td>0.40</td><td>69.00</td><td class="k"><span class="dim2">售电</span></td></tr>
+<tr><td class="k">　合计（＝年发电量）</td><td>11.500</td><td>100.0%</td><td>—</td><td>802.12</td><td class="k"><span class="dim2">—</span></td></tr>
+<tr><td class="k">减：光伏年运维</td><td>—</td><td>—</td><td>—</td><td>−60.00</td><td class="k"><span class="dim2">引擎源码常量 pv_om</span></td></tr>
+<tr class="tot"><td class="k">＝ 光伏净收益</td><td>—</td><td>—</td><td>—</td><td>742.12</td><td class="k"><span class="dim2">＝ 观测 pv_only_net_wan</span></td></tr>
+</tbody>
+</table>
+</div></div></div><div class="note lime" style="margin-top:14px"><b>光伏去向口径</b>：报告只给百分比（「自消纳约 85%、上网约 15%」），<b>绝对量无对应出参</b>。本图 9.78 / 1.73 GWh 从引擎取，合法性由「已出口标量一致性」担保（同一模块 5 项出口标量与已发布观测逐位一致 1e-12）⇒ 未出口字段可安全直取。两项收益现取现算：9.775 × 0.75 ＝ <b>733.12</b>、1.725 × 0.40 ＝ <b>69.00</b>，相加减去运维 60.00 恰为观测 <b>742.12</b> 万元。<b>电价差 0.35 元/kWh</b> 意味着多发一度自用比上网多赚 0.35 元；但把上网 1.725 GWh 全部转自用的增益 <b>60.38 万元/年</b> 只是<b>上界</b>——前提是园区存在能同时吃下该电量的本地负荷，该前提在现有观测里<b>无法验证</b>，故只报为潜力值、不计入收益合计。</div><div class="cbox figure9-card" style="--mc:var(--red);margin-top:16px">
+<div class="ct"><span class="tag">图 11</span>光储充内部三项静态回收期</div>
+<div class="cs">★ 储能单项回收期 10.50 年，是光储充整体 4.11 年的 2.56 倍——真正的拖累项</div>
+<svg aria-label="光储充内部三项静态回收期条形图" class="chart" role="img" viewbox="0 0 1160 320">
+<defs>
+<lineargradient id="q1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#38bdf8"></stop><stop offset="1" stop-color="#0ea5e9"></stop></lineargradient>
+<lineargradient id="q2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fb7185"></stop><stop offset="1" stop-color="#e11d48"></stop></lineargradient>
+<lineargradient id="q3" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#67e8f9"></stop><stop offset="1" stop-color="#22d3ee"></stop></lineargradient>
+</defs>
+<g>
+<line class="grid-ln" x1="150" x2="150" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="150" y="260">0</text>
+<line class="grid-ln" x1="344" x2="344" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="344" y="260">2.5</text>
+<line class="grid-ln" x1="538" x2="538" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="538" y="260">5</text>
+<line class="grid-ln" x1="732" x2="732" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="732" y="260">7.5</text>
+<line class="grid-ln" x1="926" x2="926" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="926" y="260">10</text>
+<line class="grid-ln" x1="1120" x2="1120" y1="44" y2="244"></line><text class="t-ax" text-anchor="middle" x="1120" y="260">12.5</text>
+</g>
+<line class="ref-ln" x1="468.9" x2="468.9" y1="40" y2="248"></line>
+<text class="t-sub" style="fill:#94a3b8;font-size:10px" x="473.9" y="34">光储充整体 4.11 年</text>
+<g data-grp="q">
+<rect class="bar" data-tip="光伏｜回收期 4.72 年｜投资 3,500 万元（占 65.9%）｜净收益 742.12 万元（占 57.4%）" fill="url(#q1)" height="24" rx="4" width="366.3" x="150" y="70"></rect>
+<rect class="bar" data-tip="储能｜回收期 10.50 年｜投资 1,260 万元（占 23.7%）｜净收益 120.00 万元（占 9.3%）｜投资与产出严重不成比例" fill="url(#q2)" height="24" rx="4" width="814.8" x="150" y="122"></rect>
+<rect class="bar" data-tip="充电站｜回收期 1.28 年｜投资 550 万元（占 10.4%）｜净收益 430.00 万元（占 33.3%）｜效益最高" fill="url(#q3)" height="24" rx="4" width="99.3" x="150" y="174"></rect>
+</g>
+<text class="t-val" x="521.8" y="86">4.72</text>
+<text class="t-val" x="970.8" y="138">10.50</text>
+<text class="t-val" style="font-size:11px" x="255.8" y="190">1.28</text>
+<text class="t-lab" text-anchor="end" x="140" y="86">光伏 3,500 万</text>
+<text class="t-lab" text-anchor="end" x="140" y="138">储能 1,260 万</text>
+<text class="t-lab" text-anchor="end" x="140" y="190">充电站 550 万</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="635" y="316">回收期（年） ｜ 储能投资占光储充 23.7%，却只贡献 9.3% 净收益——投资与产出严重不成比例</text>
+</svg>
+</div></div></section></section></section><section aria-label="04 LNG 冷能多级利用系统" class="module-group" id="module-lng"><div class="group-title"><h2>04 LNG 冷能多级利用系统</h2><span>多级温位冷能利用 / 经济效益</span></div><div class="note warn" id="cold-check"><b>LNG 冷能核校：</b>原HTML载明 LNG 年处理量 10,000 m³（液）、密度 430 kg/m³、理论单位冷能 921.4 kJ/kg。乘积÷3.6×10⁹ = <b>1.1006 GWh/年</b>（四舍五入）；原文件同时记载终端实供 <b>1.0638 GWh/年</b>、残冷放空 0.0368 GWh/年。前者是理论可用冷能，不能标为终端实际供冷量。该验证仅核对文件内给定参数及换算，未独立验证工程输入参数。</div><section class="mod" id="lng-module">
+<div class="mh"><span class="dot" style="--mc:var(--teal-d)"></span><h2>LNG 冷能多级利用</h2><span class="note">四级温位级联 · 深冷 → 中冷 → 浅冷 → 残冷</span></div>
+<div class="kpi">
+<div class="kc" style="--mc:var(--teal)"><div class="l">LNG 总冷能</div><div class="v">1.1006<span class="u">GWh</span></div><div class="n">10,000 m³(液) × 430 kg/m³ × 921.4 kJ/kg</div></div>
+<div class="kc" style="--mc:var(--teal-d)"><div class="l">梯级利用率</div><div class="v">96.66<span class="u">%</span></div><div class="n">入负荷 1.0638 GWh（三级实供合计）</div></div>
+<div class="kc" style="--mc:var(--amber)"><div class="l">机械补差缺口</div><div class="v">0.0262<span class="u">GWh</span></div><div class="n">中冷 0.0178 ＋ 浅冷 0.0085</div></div>
+<div class="kc" style="--mc:var(--slate)"><div class="l">残冷放空</div><div class="v">0.0368<span class="u">GWh</span></div><div class="n">夹点 ＋16℃ 以上无负荷承接</div></div>
+<div class="kc" style="--mc:var(--blue)"><div class="l">冷能净收益</div><div class="v">83.90<span class="u">万元/年</span></div><div class="n">收入 104.42 − 补差电费 0.52 − 运维 20</div></div>
+<div class="kc" style="--mc:var(--red)"><div class="l">单系统回收期</div><div class="v">7.15<span class="u">年</span></div><div class="n">投资 600 万元（报告与引擎交叉核对一致）</div></div>
+</div>
+<div class="grid2" style="margin-top:16px">
+<!-- 图12 LNG 冷能三级温位梯级利用 -->
+<div class="cbox" style="--mc:var(--teal)">
+<div class="ct"><span class="tag">图 12</span>LNG 冷能三级温位梯级利用</div>
+<div class="cs">深冷 0.9000 / 中冷 0.1322 / 浅冷 0.0315 GWh；缺口共 0.0262 GWh 由电制冷补差（COP 冷藏 3.5、数据中心 4.5）</div>
+<svg aria-label="LNG冷能三级温位梯级利用图" class="chart" role="img" viewbox="0 0 560 330">
+<defs>
+<lineargradient id="c1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5eead4"></stop><stop offset="1" stop-color="#0d9488"></stop></lineargradient>
+<lineargradient id="c2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#94a3b8"></stop><stop offset="1" stop-color="#5b7794"></stop></lineargradient>
+</defs>
+<g>
+<line class="grid-ln" x1="66" x2="540" y1="256" y2="256"></line><text class="t-ax" text-anchor="end" x="60" y="259.5">0</text>
+<line class="grid-ln" x1="66" x2="540" y1="214" y2="214"></line><text class="t-ax" text-anchor="end" x="60" y="217.5">0.2</text>
+<line class="grid-ln" x1="66" x2="540" y1="172" y2="172"></line><text class="t-ax" text-anchor="end" x="60" y="175.5">0.4</text>
+<line class="grid-ln" x1="66" x2="540" y1="130" y2="130"></line><text class="t-ax" text-anchor="end" x="60" y="133.5">0.6</text>
+<line class="grid-ln" x1="66" x2="540" y1="88" y2="88"></line><text class="t-ax" text-anchor="end" x="60" y="91.5">0.8</text>
+<line class="grid-ln" x1="66" x2="540" y1="46" y2="46"></line><text class="t-ax" text-anchor="end" x="60" y="49.5">1</text>
+<line class="axis-ln" x1="66" x2="66" y1="46" y2="256"></line>
+</g>
+<!-- 柱位：x=96/284/472，宽 88，中心 140/328/516；scale=210/1 -->
+<g data-grp="lng6">
+<g data-tip="深冷 · 冷冻库（-30℃）｜设计需求 0.9000 GWh｜LNG 实供 0.9000 GWh｜缺口 0｜冷价 1.00 元/kWh冷｜收益 90.00 万元/年">
+<rect class="seg" fill="url(#c1)" height="189" rx="4" width="88" x="96" y="67"></rect>
+</g>
+<g data-tip="中冷 · 冷藏（-1℃）｜设计需求 0.1500 GWh｜LNG 实供 0.1322｜补差 0.0178（COP 3.5）｜冷价 0.90｜收益 11.90 万元/年">
+<rect class="seg" fill="url(#c1)" height="27.8" rx="4" width="88" x="284" y="228.2"></rect>
+<rect class="seg" fill="url(#c2)" height="3.7" width="88" x="284" y="224.5"></rect>
+</g>
+<g data-tip="浅冷 · 数据中心（+11℃）｜设计需求 0.0400 GWh｜LNG 实供 0.0315｜补差 0.0085（COP 4.5）｜冷价 0.80｜收益 2.52 万元/年">
+<rect class="seg" fill="url(#c1)" height="6.6" rx="4" width="88" x="472" y="249.4"></rect>
+<rect class="seg" fill="url(#c2)" height="1.8" width="88" x="472" y="247.6"></rect>
+</g>
+</g>
+<text class="t-val" text-anchor="middle" x="140" y="61">0.9</text>
+<text class="t-val" text-anchor="middle" x="328" y="218.5">0.15</text>
+<text class="t-val" text-anchor="middle" x="516" y="241.6">0.04</text>
+<text class="t-lab" text-anchor="middle" x="140" y="272">深冷 冷冻库</text>
+<text class="t-sub" style="font-size:10px" text-anchor="middle" x="140" y="284.5">−30℃</text>
+<text class="t-lab" text-anchor="middle" x="328" y="272">中冷 冷藏</text>
+<text class="t-sub" style="font-size:10px" text-anchor="middle" x="328" y="284.5">−1℃</text>
+<text class="t-lab" text-anchor="middle" x="516" y="272">浅冷 数据中心</text>
+<text class="t-sub" style="font-size:10px" text-anchor="middle" x="516" y="284.5">＋11℃</text>
+<text class="t-sub" style="font-size:10.5px" text-anchor="middle" x="303" y="326">按温位从低到高级联（先到先得）｜实供＋补差＝设施冷需求</text>
+<rect fill="url(#c1)" height="11" rx="2" width="11" x="66" y="304"></rect>
+<text class="t-lab" style="font-size:11px" x="82" y="313">LNG 冷能实供</text>
+<rect fill="url(#c2)" height="11" rx="2" width="11" x="176" y="304"></rect>
+<text class="t-lab" style="font-size:11px" x="192" y="313">机械制冷补差</text>
+</svg>
+<div class="cf">实供合计 1.0638 ＋ 补差 0.0262 ＝ 1.09 GWh（三级设计需求）；残冷 0.0368 GWh 因夹点温度无低品位负荷承接而放空——物理必然，非设计缺陷</div>
+</div>
+<!-- 图13 分级冷价下的冷能收益构成 -->
+<div class="cbox" style="--mc:var(--teal-d)">
+<div class="ct"><span class="tag">图 13</span>分级冷价下的冷能收益构成</div>
+<div class="cs">合计 104.42 万元/年；深冷以 84.6% 冷量贡献 86.2% 收益（越低温越值钱）</div>
+<svg aria-label="分级冷价冷能收益构成条形图" class="chart chart-lg" role="img" viewbox="0 0 650 300">
+<defs>
+<lineargradient id="k1" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#0d9488"></stop><stop offset="1" stop-color="#14b8a6"></stop></lineargradient>
+<lineargradient id="k2" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#2dd4bf"></stop><stop offset="1" stop-color="#5eead4"></stop></lineargradient>
+<lineargradient id="k3" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#5eead4"></stop><stop offset="1" stop-color="#99f6e4"></stop></lineargradient>
+</defs>
+<g>
+<line class="grid-ln" x1="150" x2="150" y1="62" y2="204"></line><text class="t-ax" text-anchor="middle" x="150" y="220">0</text>
+<line class="grid-ln" x1="262" x2="262" y1="62" y2="204"></line><text class="t-ax" text-anchor="middle" x="262" y="220">20</text>
+<line class="grid-ln" x1="374" x2="374" y1="62" y2="204"></line><text class="t-ax" text-anchor="middle" x="374" y="220">40</text>
+<line class="grid-ln" x1="486" x2="486" y1="62" y2="204"></line><text class="t-ax" text-anchor="middle" x="486" y="220">60</text>
+<line class="grid-ln" x1="540" x2="540" y1="62" y2="204"></line><text class="t-ax" text-anchor="middle" x="540" y="220">80</text>
+</g>
+<line class="ref-ln" x1="319.65" x2="319.65" y1="56" y2="208"></line>
+<text class="t-sub" style="fill:#94a3b8;font-size:10px" x="324.05" y="52">三级均值 34.81</text>
+<g data-grp="lng7">
+<rect class="bar" data-tip="深冷 · 冷冻库｜收益 90.00 万元/年｜0.9000 GWh × 1.00 元/kWh冷" fill="url(#k1)" height="20" rx="3" width="438.75" x="150" y="70"></rect>
+<rect class="bar" data-tip="中冷 · 冷藏｜收益 11.90 万元/年｜0.1322 GWh × 0.90 元/kWh冷" fill="url(#k2)" height="20" rx="3" width="58.01" x="150" y="116"></rect>
+<rect class="bar" data-tip="浅冷 · 数据中心｜收益 2.52 万元/年｜0.0315 GWh × 0.80 元/kWh冷" fill="url(#k3)" height="20" rx="2" width="12.29" x="150" y="162"></rect>
+</g>
+<text class="t-val" x="594.75" y="84">90.00</text>
+<text class="t-val" x="214.21" y="130">11.90</text>
+<text class="t-val" style="font-size:11px" x="168.25" y="176">2.52</text>
+<text class="t-lab" text-anchor="end" x="140" y="84">深冷 冷冻库</text>
+<text class="t-lab" text-anchor="end" x="140" y="130">中冷 冷藏</text>
+<text class="t-lab" text-anchor="end" x="140" y="176">浅冷 数据中心</text>
+<text class="t-sub" style="font-size:12.2px" text-anchor="middle" x="280" y="296">万元/年 ｜ 分级冷价：深冷 1.00 / 中冷 0.90 / 浅冷 0.80 元/kWh冷</text>
+</svg>
+<div class="cf">深冷贡献 90.00／104.42 ＝ 86.2% 收益，而其冷量占比仅 0.9000／1.0638 ＝ 84.6%——低温冷价溢价</div>
+</div>
+</div>
+<!-- LNG 冷能表 -->
+<div class="tbl-scroll">
+<table class="dt" style="margin-top:14px">
+<colgroup><col style="width:22%"/><col style="width:10%"/><col style="width:17%"/><col style="width:17%"/><col style="width:12%"/><col style="width:12%"/><col style="width:10%"/></colgroup>
+<thead><tr><th class="k">温位级（用冷设施）</th><th>温位（℃）</th><th>设计需求（GWh）</th><th>LNG 实供（GWh）</th><th>缺口（GWh）</th><th>冷价（元/kWh冷）</th><th>收益（万元/年）</th></tr></thead>
+<tbody>
+<tr><td class="k">深冷 · 冷冻库</td><td>−30</td><td>0.9000</td><td>0.9000</td><td>0.0000</td><td>1.00</td><td>90.00</td></tr>
+<tr><td class="k">中冷 · 冷藏</td><td>−1</td><td>0.1500</td><td>0.1322</td><td>0.0178</td><td>0.90</td><td>11.90</td></tr>
+<tr><td class="k">浅冷 · 数据中心</td><td>11</td><td>0.0400</td><td>0.0315</td><td>0.0085</td><td>0.80</td><td>2.52</td></tr>
+<tr><td class="k">三级合计</td><td>—</td><td>1.0900</td><td>1.0638</td><td>0.0262</td><td>—</td><td>104.42</td></tr>
+<tr><td class="k">残冷（放空）</td><td>＋16 以上</td><td>—</td><td>0.0368</td><td>—</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<div class="note"><b>冷能梯级口径</b>：LNG 总冷能 <b>1.1006 GWh</b> ＝ 年气化量 10,000 m³(液) × 密度 430 kg/m³ × 单位冷能 921.4 kJ/kg。四级按「先到先得」级联：<b>深冷</b>（−30℃ 冷冻库）→ <b>中冷</b>（−1℃ 冷藏）→ <b>浅冷</b>（＋11℃ 数据中心）→ <b>残冷</b>（夹点 ＋16℃ 以上已无更低品位负荷可承接，0.0368 GWh 放空——这是<b>物理必然</b>，不是设计缺陷）。本章数据取自<b>本地权威引擎直调</b>（<code>sim_cooling()</code>），并设三道门闸：三项标量与已发布观测逐位一致、四级账本 10 条恒等式自洽、回收期与报告文本交叉核对——任一不成立即报错，不会静默出图。机械补差走购电价、<b>与气价无关</b>。</div>
+</section></section></div></section><script>
+/* 大屏时间戳（实时时钟，JS 失败时保留静态初始值） */
+(function(){
+  var el=document.getElementById('clock');
+  if(!el)return;
+  function tick(){
+    var d=new Date(),p=function(x){return x<10?'0'+x:x};
+    el.textContent=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  }
+  tick();setInterval(tick,1000);
+})();
+/* 交互：tooltip + 分组/桑基联动高亮（无 JS 时全部数据仍静态可读） */
+(function(){
+  var tip=document.getElementById('tip');
+  if(!tip){return;}
+  var dims=[];
+  function clearDim(){for(var i=0;i<dims.length;i++){dims[i].classList.remove('dim');}dims=[];}
+  function addDim(o){if(o.classList.contains('dim')){return;}o.classList.add('dim');dims.push(o);}
+
+  var els=document.querySelectorAll('[data-tip]');
+  for(var i=0;i<els.length;i++){(function(el){
+    el.addEventListener('mouseenter',function(ev){
+      var text=el.getAttribute('data-tip')||'';
+      var parts=text.split('｜');
+      var html='';
+      for(var k=0;k<parts.length;k++){
+        html+=(k===0?'<b>':'')+parts[k]+(k===0?'</b>':'')+(k<parts.length-1?'<br>':'');
+      }
+      tip.innerHTML=html;
+      tip.classList.add('on');
+
+      var grp=el.getAttribute('data-grp');
+      if(grp){
+        var gs=document.querySelectorAll('[data-grp="'+grp+'"]');
+        for(var g=0;g<gs.length;g++){if(gs[g]!==el){addDim(gs[g]);}}
+      }
+      var f=el.getAttribute('data-flow'),n=el.getAttribute('data-node');
+      if(f||n){
+        var keep=[];
+        if(f){keep.push('[data-flow="'+f+'"]');}
+        if(n){keep.push('[data-node="'+n+'"]');}
+        var ns=el.getAttribute('data-nodes');
+        if(ns){var na=ns.split(' ');for(var x=0;x<na.length;x++){keep.push('[data-node="'+na[x]+'"]');}}
+        var fs=el.getAttribute('data-flows');
+        if(fs){var fa=fs.split(' ');for(var y=0;y<fa.length;y++){keep.push('[data-flow="'+fa[y]+'"]');}}
+        var snk=document.querySelectorAll('.snk [data-flow],.snk [data-node]');
+        for(var s=0;s<snk.length;s++){
+          var hit=false;
+          for(var q=0;q<keep.length;q++){
+            try{if(snk[s].matches(keep[q])){hit=true;break;}}catch(e){}
+          }
+          if(!hit){addDim(snk[s]);}
+        }
+      }
+    });
+    el.addEventListener('mousemove',function(ev){
+      var r=tip.getBoundingClientRect();
+      var left=ev.clientX+14,top=ev.clientY+14;
+      if(left+r.width>window.innerWidth-8){left=ev.clientX-r.width-14;}
+      if(top+r.height>window.innerHeight-8){top=ev.clientY-r.height-14;}
+      tip.style.left=left+'px';
+      tip.style.top=top+'px';
+    });
+    el.addEventListener('mouseleave',function(){
+      tip.classList.remove('on');
+      clearDim();
+    });
+  })(els[i]);}
+})();
+</script><script>(function(){
+ const detail=document.getElementById('details'),btn=document.getElementById('showDetail');
+ function toggle(open,scroll){detail.classList.toggle('open',open);btn.setAttribute('aria-expanded',String(open));btn.textContent=open?'收起详细分析 ↑':'展开完整分析与全部图表 ↓';if(open&&scroll)detail.scrollIntoView({behavior:'smooth'});}
+ btn.addEventListener('click',()=>toggle(!detail.classList.contains('open'),true));
+ const DATA={
+ pv:{title:'光伏发电分析',stats:[['年度发电量','11.50 GWh/年'],['自发自用','9.775 GWh/年'],['余电上网','1.725 GWh/年'],['自用比例','85.0%']],desc:'能源去向守恒：9.775 + 1.725 = 11.50 GWh/年。原始光伏净收益：742.12 万元/年。装机容量在本文件中未给出，不进行推算。'},
+ storage:{title:'储能运行分析',stats:[['年充放电吞吐','2.40 GWh/年'],['年度收益','120.00 万元/年'],['实时 SOC','数据未接入'],['储能效率','数据未提供']],desc:'2.40 GWh/年是储能充放电吞吐指标，不等于净发电量；未提供充、放电单独统计及峰谷套利分项明细。'},
+ charging:{title:'充电设施分析',stats:[['终端充电用电','12.00 GWh/年'],['年度收益','430.00 万元/年'],['设备数量','源文件未提供'],['实时利用率','数据未接入']],desc:'充电站 12.00 GWh/年属于终端用电，不是向园区供电的发电源。'},
+ coord:{title:'光储充协同分析',stats:[['光伏供给','11.50 GWh/年'],['光伏自用','9.775 GWh/年'],['储能吞吐','2.40 GWh/年'],['充电终端负荷','12.00 GWh/年']],desc:'能源协同按“光伏发电→自用/上网、电网↔储能、光伏/电网/储能→充电负荷”组织；由于缺少小时级能流数据，无法进一步计算分时协同消纳与电网净购电量。'},
+ economy:{title:'经济效益分析',stats:[['光伏年净收益','742.12 万元/年'],['储能年净收益','120.00 万元/年'],['充电年净收益','430.00 万元/年'],['合计','1,292.12 万元/年']],desc:'三项年收益合计 1,292.12 万元/年，已计入供电子系统收益，不得与供电子系统收益再次相加。供电子系统静态回收期：4.11 年。'}
+ };
+ function render(name){const d=DATA[name]||DATA.pv;document.querySelectorAll('[data-tab]').forEach(b=>{let active=b.dataset.tab===name;b.classList.toggle('selected',active);b.setAttribute('aria-selected',String(active))});document.getElementById('psc-content').innerHTML='<div class="psc-pane"><h3>'+d.title+'</h3><div class="psc-stats">'+d.stats.map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('')+'</div><p>'+d.desc+'</p></div>';}
+ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>render(b.dataset.tab)));render('pv');
+ function jump(n){toggle(true,false);let target;if(n==='lng')target=document.getElementById('lng-module');else if(n==='cchp')target=document.getElementById('cchp-module');else{render(n);target=document.getElementById('pv-storage-charge');}if(target){target.scrollIntoView({behavior:'smooth',block:'start'});target.classList.remove('jump-highlight');void target.offsetWidth;target.classList.add('jump-highlight');}}
+ document.querySelectorAll('.hero .system').forEach(el=>{const a=()=>jump(el.dataset.jump||'pv');el.addEventListener('click',a);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();a()}})});
+ document.getElementById('fullScreen').addEventListener('click',()=>{if(!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();else if(document.exitFullscreen)document.exitFullscreen()});
+})();</script><script>
+(function(){
+const detail=document.getElementById('details'),toggle=document.getElementById('showDetail');
+function scrollModule(id){detail.classList.add('open');toggle.setAttribute('aria-expanded','true');toggle.textContent='收起详细分析 ↑';const t=document.getElementById(id);if(t){t.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));}}
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>scrollModule(b.dataset.nav)));
+document.querySelectorAll('[data-back="home"]').forEach(b=>b.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'})));
+document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollModule('module-overall');hub.addEventListener('click',action);hub.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();action();}})});
+})();
+</script><script id="__slots" type="application/json">{
+ "_doc": "大屏数据驱动槽位表｜由 _dash_slots.py 从产线规则导出｜与具体算例无关",
+ "_source": {
+  "page": "综合能源智慧托管平台.html",
+  "base_obs": "_viz_obs__multi_live_T5_1.json",
+  "regen_min_short": 3,
+  "regen_short_max_hits": 5
+ },
+ "text": {
+  "abs_chill_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "8.120",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "8.12",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 12,
+     "scope": "any"
+    }
+   ]
+  },
+  "carbon_price": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "90 元/t",
+     "dec": 0,
+     "comma": false,
+     "suffix": " 元/t",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "90.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 5,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_carbon_t": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "2,193.72",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    },
+    {
+     "s": "2193.72",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    },
+    {
+     "s": "2,194",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_gas_wan_m3": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "243.540",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "243.54",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_gen_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "10.560",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "10.56",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 18,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_heat_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "11.880",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "11.88",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 15,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_heat_use_rate": {
+   "pct": true,
+   "forms": [
+    {
+     "s": "100.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "100.0",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    }
+   ]
+  },
+  "cchp_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "672.33",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 14,
+     "scope": "any"
+    },
+    {
+     "s": "672",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "text"
+    }
+   ]
+  },
+  "cchp_payback": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "3.93",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 8,
+     "scope": "any"
+    }
+   ]
+  },
+  "ch_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "430.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    }
+   ]
+  },
+  "ci_per_invest": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "0.2566",
+     "dec": 4,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "ci_per_net": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1.0710",
+     "dec": 4,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "cost_gas": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "840.21",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    },
+    {
+     "s": "840",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "text"
+    }
+   ]
+  },
+  "cost_om": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "47.52",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    }
+   ]
+  },
+  "elec_price": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "0.75 元/kWh",
+     "dec": 2,
+     "comma": false,
+     "suffix": " 元/kWh",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "0.75",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    }
+   ]
+  },
+  "es_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "120.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    }
+   ]
+  },
+  "es_tput_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "2.400",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "2.40",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "ev_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "12.000",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "12.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 13,
+     "scope": "any"
+    }
+   ]
+  },
+  "feed_in_price": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "0.40",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "gas_price": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "3.45 元/m³",
+     "dec": 2,
+     "comma": false,
+     "suffix": " 元/m³",
+     "n": 3,
+     "scope": "any"
+    },
+    {
+     "s": "3.45",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    }
+   ]
+  },
+  "joint_carbon_t": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "2,193.72",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    },
+    {
+     "s": "2193.72",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    },
+    {
+     "s": "2,194",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "joint_invest_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "8,550",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    },
+    {
+     "s": "8550",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "joint_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "2,048.35",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    },
+    {
+     "s": "2048.35",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    },
+    {
+     "s": "2,048",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
+  "joint_payback": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "4.17",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 17,
+     "scope": "any"
+    }
+   ]
+  },
+  "lng_mech_gap": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "0.0262",
+     "dec": 4,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    }
+   ]
+  },
+  "lng_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "83.90",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    },
+    {
+     "s": "83.9",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
+  "lng_payback": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "7.15",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    }
+   ]
+  },
+  "lng_recovery": {
+   "pct": true,
+   "forms": [
+    {
+     "s": "96.66",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "96.7",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "pv_feed_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "15.0",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    }
+   ]
+  },
+  "pv_gen_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "11.500",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    },
+    {
+     "s": "11.50",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 20,
+     "scope": "any"
+    },
+    {
+     "s": "11.5",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "pv_only_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "742.12",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    },
+    {
+     "s": "742",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "text"
+    }
+   ]
+  },
+  "pv_self_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "85.0",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    }
+   ]
+  },
+  "pves_invest_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "5,310.00",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "pves_net_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1,292.12",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    },
+    {
+     "s": "1292.12",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "1,292",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "1292",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "pves_payback": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "4.11",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 12,
+     "scope": "any"
+    },
+    {
+     "s": "4.1",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "rev_ca": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "19.74",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 5,
+     "scope": "any"
+    }
+   ]
+  },
+  "rev_ch": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "649.60",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "649.6",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    },
+    {
+     "s": "650",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "text"
+    }
+   ]
+  },
+  "rev_hw": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "98.72",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 5,
+     "scope": "any"
+    }
+   ]
+  },
+  "rev_pv": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "792.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    },
+    {
+     "s": "792",
+     "dec": 0,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "text"
+    }
+   ]
+  },
+  "rev_total": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1560.06",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 8,
+     "scope": "any"
+    }
+   ]
+  },
+  "share_cchp_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "32.82",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "32.8",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    }
+   ]
+  },
+  "share_lng_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "4.1",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "share_pves_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "63.1",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 11,
+     "scope": "any"
+    }
+   ]
+  }
+ },
+ "geom": [
+  {
+   "gid": "pbAmber",
+   "key": "cchp_payback",
+   "group": "g1",
+   "dir": "H",
+   "ppu": 117.60630692575035,
+   "base": {
+    "x": 150.0,
+    "y": 52.0,
+    "w": 461.8,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "pbBlue",
+   "key": "pves_payback",
+   "group": "g1",
+   "dir": "H",
+   "ppu": 117.53227401129944,
+   "base": {
+    "x": 150.0,
+    "y": 96.0,
+    "w": 483.0,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "pbTeal",
+   "key": "lng_payback",
+   "group": "g1",
+   "dir": "H",
+   "ppu": 117.48251748251748,
+   "base": {
+    "x": 150.0,
+    "y": 140.0,
+    "w": 840.0,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "pbSlate",
+   "key": "joint_payback",
+   "group": "g1",
+   "dir": "H",
+   "ppu": 117.36712214385112,
+   "base": {
+    "x": 150.0,
+    "y": 184.0,
+    "w": 489.9,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s1",
+   "key": "cchp_gen_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.18939393939394,
+   "base": {
+    "x": 150.0,
+    "y": 48.0,
+    "w": 794.0,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s2",
+   "key": "cchp_heat_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.2020202020202,
+   "base": {
+    "x": 150.0,
+    "y": 86.0,
+    "w": 893.4,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s3",
+   "key": "abs_chill_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.19704433497537,
+   "base": {
+    "x": 150.0,
+    "y": 124.0,
+    "w": 610.6,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s4",
+   "key": "pv_gen_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.2,
+   "base": {
+    "x": 150.0,
+    "y": 162.0,
+    "w": 864.8,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s5",
+   "key": "ev_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.2,
+   "base": {
+    "x": 150.0,
+    "y": 200.0,
+    "w": 902.4,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "s6",
+   "key": "es_tput_GWh",
+   "group": "g2",
+   "dir": "H",
+   "ppu": 75.20833333333334,
+   "base": {
+    "x": 150.0,
+    "y": 238.0,
+    "w": 180.5,
+    "h": 24.0
+   }
+  },
+  {
+   "gid": "n1",
+   "key": "ci_per_net",
+   "group": "g3",
+   "dir": "H",
+   "ppu": 342.4008259767439,
+   "base": {
+    "x": 108.0,
+    "y": 48.0,
+    "w": 366.7,
+    "h": 22.0
+   }
+  },
+  {
+   "gid": "n2",
+   "key": "ci_per_invest",
+   "group": "g3",
+   "dir": "H",
+   "ppu": 342.58926673543016,
+   "base": {
+    "x": 108.0,
+    "y": 142.0,
+    "w": 87.9,
+    "h": 22.0
+   }
+  },
+  {
+   "gid": "v1",
+   "key": "rev_total",
+   "group": "g4",
+   "dir": "WF",
+   "ppu": 0.14428290384756193,
+   "base": {
+    "x": 77.8,
+    "y": 83.22,
+    "w": 67.5,
+    "h": 225.09
+   }
+  },
+  {
+   "gid": "v2",
+   "key": "cost_gas",
+   "group": "g4",
+   "dir": "WF",
+   "ppu": 0.14424913682601911,
+   "base": {
+    "x": 198.5,
+    "y": 83.22,
+    "w": 67.5,
+    "h": 121.2
+   }
+  },
+  {
+   "gid": "v3",
+   "key": "cost_om",
+   "group": "g4",
+   "dir": "WF",
+   "ppu": 0.14162457912457915,
+   "base": {
+    "x": 319.2,
+    "y": 204.53,
+    "w": 67.5,
+    "h": 6.73
+   }
+  },
+  {
+   "gid": "v4",
+   "key": "cchp_net_wan",
+   "group": "g4",
+   "dir": "WF",
+   "ppu": 0.14434938202753547,
+   "base": {
+    "x": 439.9,
+    "y": 211.26,
+    "w": 67.5,
+    "h": 97.05
+   }
+  },
+  {
+   "gid": "gPV",
+   "key": "pv_only_net_wan",
+   "group": "g5",
+   "dir": "V",
+   "ppu": 0.16479703553983494,
+   "base": {
+    "x": 197.0,
+    "y": 22.7,
+    "w": 48.0,
+    "h": 122.3
+   }
+  },
+  {
+   "gid": "gMB",
+   "key": "ch_net_wan",
+   "group": "g5",
+   "dir": "V",
+   "ppu": 0.16488372093023257,
+   "base": {
+    "x": 281.0,
+    "y": 74.1,
+    "w": 48.0,
+    "h": 70.9
+   }
+  },
+  {
+   "gid": "gCY",
+   "key": "es_net_wan",
+   "group": "g5",
+   "dir": "V",
+   "ppu": 0.165,
+   "base": {
+    "x": 365.0,
+    "y": 125.2,
+    "w": 48.0,
+    "h": 19.8
+   }
+  }
+ ],
+ "refln": [
+  {
+   "key": "joint_payback",
+   "x0": 150.0,
+   "gid": "pbSlate"
+  },
+  {
+   "key": "pves_payback",
+   "x0": 150.0,
+   "gid": "q1"
+  }
+ ],
+ "refln_scale": [
+  {
+   "gid": "k1",
+   "zero": 150.0
+  }
+ ],
+ "hbar": {
+  "keys": [
+   "pves_net_wan",
+   "cchp_net_wan",
+   "lng_net_wan"
+  ]
+ },
+ "axis": [
+  {
+   "group": "g5",
+   "axis": "y",
+   "zero": 145.0,
+   "ticks": [
+    0,
+    200,
+    400,
+    600,
+    800
+   ],
+   "gids": [
+    "gPV",
+    "gMB",
+    "gCY"
+   ],
+   "label": "图02收益"
+  }
+ ],
+ "g7": {
+  "gids": [
+   "k1",
+   "k2",
+   "k3"
+  ],
+  "vb_old": 560.0,
+  "vb_new": 650.0,
+  "zero": 150.0,
+  "ticks": [
+   0,
+   20,
+   40,
+   60,
+   80
+  ],
+  "ratio": 1.1607142857142858
+ }
+}</script>
+
+<script>
+/* ═══ 数据驱动渲染层 v2 ═══
+   ① 文本：按 data.repl 表替换（替换串由 Python 算好 ⇒ 无浮点格式化差异）
+   ② 几何：柱长 = vals[k] × ppu（同为 IEEE 754 double ⇒ 一致）
+   ③ 参考线 / HTML 柱；取不到 data.json 时保持基线显示（不静默出错）。
+*/
+(function () {
+  var S = null, V = null, KB = null, BV = null;
+  function fnum(v) {
+    var s = v.toFixed(2);
+    if (s.slice(-1) === '0') s = s.slice(0, -1);
+    if (s.slice(-2) === '.0') s = s.slice(0, -2);
+    return s;
+  }
+  function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function isTax(el) {
+    for (var n = el; n; n = n.parentElement) {
+      var c = (n.getAttribute && n.getAttribute('class')) || '';
+      if (c.indexOf('t-ax') >= 0) return true;
+    }
+    return false;
+  }
+  function rep(o, nw) {
+    var re = new RegExp('(?<![\\d.])' + esc(o) + '(?![\\d.])', 'g');
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), t, buf = [];
+    while ((t = w.nextNode())) buf.push(t);
+    buf.forEach(function (x) {
+      if (isTax(x.parentElement)) return;          /* 轴刻度不动 */
+      if (x.nodeValue && x.nodeValue.indexOf(o) >= 0)
+        x.nodeValue = x.nodeValue.replace(re, nw);
+    });
+    document.querySelectorAll('[data-tip],[aria-label]').forEach(function (el) {
+      ['data-tip', 'aria-label'].forEach(function (a) {
+        var v = el.getAttribute(a);
+        if (v && v.indexOf(o) >= 0) el.setAttribute(a, v.replace(re, nw));
+      });
+    });
+  }
+  function rectOf(g) { return document.querySelector('rect[fill="url(#' + g + ')"]'); }
+  function svgOf(e) { var n = e; while (n && n.tagName !== 'svg') n = n.parentElement; return n; }
+  function shift(svg, i, at, d) {
+    var ts = svg.querySelectorAll('text[class="t-val"]');
+    if (i < ts.length) ts[i].setAttribute(at, fnum(parseFloat(ts[i].getAttribute(at)) + d));
+  }
+  function geom() {
+    var c = {}, wf = [];
+    S.geom.forEach(function (g) {
+      var v = V[g.key]; if (v == null) return;
+      var el = rectOf(g.gid); if (!el) return;
+      var i = c[g.group] = (c[g.group] || 0);
+      if (g.dir === 'H') {
+        var w = v * g.ppu, d = w - g.base.w;
+        if (fnum(w) !== el.getAttribute('width')) {
+          el.setAttribute('width', fnum(w));
+          shift(svgOf(el), i, 'x', d);
+        }
+      } else if (g.dir === 'V') {
+        var h = v * g.ppu, y = (g.base.y + g.base.h) - h;
+        el.setAttribute('height', fnum(h));
+        el.setAttribute('y', fnum(y));
+        shift(svgOf(el), i, 'y', y - g.base.y);
+      } else { wf.push(g); }
+      c[g.group] = i + 1;
+    });
+    if (wf.length === 4) {
+      var a = wf[0], b = wf[1], d0 = wf[2], e = wf[3];
+      var b1 = a.base.y + a.base.h, h1 = V[a.key] * a.ppu, top = b1 - h1;
+      var r1 = rectOf(a.gid);
+      r1.setAttribute('height', fnum(h1)); r1.setAttribute('y', fnum(top));
+      shift(svgOf(r1), 0, 'y', top - a.base.y);
+      var h2 = V[b.key] * b.ppu, r2 = rectOf(b.gid);
+      r2.setAttribute('height', fnum(h2)); r2.setAttribute('y', fnum(top));
+      shift(svgOf(r2), 1, 'y', top - b.base.y);
+      var gap = d0.base.y - (b.base.y + b.base.h), h3 = V[d0.key] * d0.ppu;
+      var y3 = top + h2 + gap, r3 = rectOf(d0.gid);
+      r3.setAttribute('height', fnum(h3)); r3.setAttribute('y', fnum(y3));
+      shift(svgOf(r3), 2, 'y', y3 - d0.base.y);
+      var b4 = e.base.y + e.base.h, h4 = V[e.key] * e.ppu, y4 = b4 - h4;
+      var r4 = rectOf(e.gid);
+      r4.setAttribute('height', fnum(h4)); r4.setAttribute('y', fnum(y4));
+      shift(svgOf(r4), 3, 'y', y4 - e.base.y);
+    }
+  }
+  function refln() {
+    S.refln.forEach(function (r) {
+      var v = V[r.key]; if (v == null) return;
+      var bar = rectOf(r.gid); if (!bar) return;
+      var g = S.geom.filter(function (x) { return x.gid === r.gid; })[0]; if (!g) return;
+      var svg = svgOf(bar), ln = svg.querySelector('line.ref-ln'); if (!ln) return;
+      var x0 = parseFloat(ln.getAttribute('x1')), x = r.x0 + v * g.ppu;
+      ln.setAttribute('x1', fnum(x)); ln.setAttribute('x2', fnum(x));
+      svg.querySelectorAll('text.t-sub').forEach(function (t) {
+        var tx = parseFloat(t.getAttribute('x') || '0');
+        if (Math.abs(tx - (x0 + 7.1)) < 8) t.setAttribute('x', fnum(tx + (x - x0)));
+      });
+    });
+  }
+  function hbars() {
+    var its = document.querySelectorAll('.bars .barcol > i');
+    if (!its.length || !KB) return;
+    for (var i = 0; i < its.length && i < KB.length; i++) {
+      var v = V[KB[i]], bv = BV[i]; if (v == null || !bv) continue;
+      var cur = parseFloat((its[i].getAttribute('style') || '').replace(/[^\d.]/g, ''));
+      var p = Math.min(100, Math.round(cur * v / bv));   /* ★ 该柱自己的基线值 */
+      if (p !== cur) its[i].setAttribute('style', 'height:' + p + '%');
+    }
+  }
+  fetch('data.json?t=' + Date.now())
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (d) {
+      V = d.vals; KB = (S0() || {}).hbar.keys; BV = d.hbar_base;
+      (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
+      geom(); refln(); hbars();
+      document.documentElement.setAttribute('data-rendered', '1');
+    })
+    .catch(function () { });
+  function S0() {
+    var sc = document.getElementById('__slots');
+    if (!sc) return null;
+    S = JSON.parse(sc.textContent);
+    return S;
+  }
+})();
+</script>
+
+</body></html>
