@@ -2830,7 +2830,22 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
       })
       .catch(function () { });
   }
-  setInterval(autoReload, 12000);
+  /* ★ 自适应轮询（实测 GitHub 未认证限流 60 次/小时）：
+       把配额花在"用户刚算完、正盯着看"的那两分钟上，之后降频。
+       · 打开后 0–2 分钟：每 15 秒（≈8 次）—— 抓住"刚提问完"的高关注窗口
+       · 2 分钟以后：每 90 秒（≈40 次/小时）—— 长期稳定，不触发限流
+       合计约 48 次/小时 < 60，留有余量。 */
+  var _t0 = Date.now();
+  function _nextInterval() {
+    var el = Date.now() - _t0;
+    if (el < 120000) return 15000;
+    return 90000;
+  }
+  function _loop() {
+    autoReload();
+    setTimeout(_loop, _nextInterval());
+  }
+  setTimeout(_loop, 15000);
 
   fetch('data.json?t=' + Date.now())
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
