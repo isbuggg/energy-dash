@@ -2627,12 +2627,29 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     });
   }
 
+  /* 派生年差（页面文案「低于整体 0.24 年」「高出整体 ＋2.98 年」）：
+     两个值都取自引擎出参，本函数只做减法 —— 不是重算模型。 */
+  function gaps() {
+    var jp = V['joint_payback'];
+    if (jp == null) return;
+    var pairs = [['cchp_gap_year', 'cchp_payback', jp], ['lng_gap_year', 'lng_payback', jp]];
+    pairs.forEach(function (p) {
+      var other = V[p[1]];
+      if (other == null) return;
+      var gap = Math.abs(other - p[2]);
+      var txt = gap.toFixed(2);
+      /* 页面上该值以「0.24」「2.98」出现，直接替换数字部分 */
+      var oldv = p[0] === 'lng_gap_year' ? '2.98' : '0.24';
+      rep(oldv, txt);
+    });
+  }
+
   fetch('data.json?t=' + Date.now())
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
       V = d.vals; KB = (S0() || {}).hbar.keys; BV = d.hbar_base;
       (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
-      geom(); refln(); hbars(); donut(); segs();
+      geom(); refln(); hbars(); donut(); segs(); gaps();
       document.documentElement.setAttribute('data-rendered', '1');
     })
     .catch(function () { });
