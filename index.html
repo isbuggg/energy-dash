@@ -2644,12 +2644,21 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     });
   }
 
+  /* 余热去向的「供暖/生活热水」= 余热总量 − 吸收制冷冷量（页面口径 11.88−8.12=3.76）。
+     两个操作数都取自引擎出参，本函数只做减法。 */
+  function heatRest() {
+    var qh = V['cchp_heat_GWh'], qc = V['abs_chill_GWh'];
+    if (qh == null || qc == null) return;
+    rep('3.76', fnum(qh - qc));
+    rep('3.76', fnum(qh - qc));   /* 正文 + data-tip 两处 */
+  }
+
   fetch('data.json?t=' + Date.now())
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
       V = d.vals; KB = (S0() || {}).hbar.keys; BV = d.hbar_base;
       (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
-      geom(); refln(); hbars(); donut(); segs(); gaps();
+      geom(); refln(); hbars(); donut(); segs(); gaps(); heatRest();
       document.documentElement.setAttribute('data-rendered', '1');
     })
     .catch(function () { });
