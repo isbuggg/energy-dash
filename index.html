@@ -2116,6 +2116,24 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    80
   ],
   "ratio": 1.1607142857142858
+ },
+ "donut": {
+  "perimeter": 408.4,
+  "r": 65,
+  "segs": [
+   {
+    "key": "share_pves_pct",
+    "stroke": "#24d9fe"
+   },
+   {
+    "key": "share_cchp_pct",
+    "stroke": "#ffd04b"
+   },
+   {
+    "key": "share_lng_pct",
+    "stroke": "#36eac4"
+   }
+  ]
  }
 }</script>
 
@@ -2226,21 +2244,29 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
       if (p !== cur) its[i].setAttribute('style', 'height:' + p + '%');
     }
   }
-  /* ★ 优先走 GitHub API：Pages 的 CDN 忽略 query（`?t=` 绕不过）且 TTL 长，
-     会让工作流更新后大屏要等缓存过期才变。API 走 ETag 协商，无此问题。 */
-  var API_URL = 'https://api.github.com/repos/isbuggg/energy-dash/contents/data.json';
-  function loadData() {
-    return fetch(API_URL, {cache: 'no-store'})
-      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (j) { return JSON.parse(atob(j.content)); })
-      .catch(function () { return fetch('data.json?t=' + Date.now())
-                                .then(function (r) { return r.json(); }); });
+  /* 环形图：dasharray[0] = 占比×周长；dashoffset = -累计占比×周长（按扇区顺序累加） */
+  function donut() {
+    var D = S.donut; if (!D || !D.segs) return;
+    var acc = 0;
+    D.segs.forEach(function (sg) {
+      var v = V[sg.key]; if (v == null) return;
+      var pr = v / 100;                       /* 占比（百分数值） */
+      var len = pr * D.perimeter;
+      var el = document.querySelector('circle[stroke="' + sg.stroke + '"][r="' + D.r + '"]');
+      if (el) {
+        el.setAttribute('stroke-dasharray', fnum(len) + ' ' + fnum(D.perimeter));
+        el.setAttribute('stroke-dashoffset', fnum(-acc * D.perimeter));
+      }
+      acc += pr;
+    });
   }
-  loadData()
+
+  fetch('data.json?t=' + Date.now())
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
       V = d.vals; KB = (S0() || {}).hbar.keys; BV = d.hbar_base;
       (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
-      geom(); refln(); hbars();
+      geom(); refln(); hbars(); donut();
       document.documentElement.setAttribute('data-rendered', '1');
     })
     .catch(function () { });
