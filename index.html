@@ -2653,6 +2653,23 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     rep('3.76', fnum(qh - qc));   /* 正文 + data-tip 两处 */
   }
 
+  /* 自动检测数据更新：每 12 秒比对 GitHub 上的文件 sha，变了就整页重载
+     （整页重载而非局部重渲染 —— 局部重渲染会因"值已被替换过"而累积失效）。
+     仅页面可见时轮询，后台标签页不打扰。 */
+  var _sha = null;
+  function autoReload() {
+    if (document.hidden) return;
+    fetch(API_URL + '?t=' + Date.now(), {cache: 'no-store'})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.sha) return;
+        if (_sha && j.sha !== _sha) { location.reload(); return; }
+        _sha = j.sha;
+      })
+      .catch(function () { });
+  }
+  setInterval(autoReload, 12000);
+
   fetch('data.json?t=' + Date.now())
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
@@ -2660,6 +2677,8 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
       (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
       geom(); refln(); hbars(); donut(); segs(); gaps(); heatRest();
       document.documentElement.setAttribute('data-rendered', '1');
+      try { fetch(API_URL, {cache: 'no-store'}).then(function (r) { return r.json(); })
+        .then(function (j) { _sha = j.sha; }).catch(function () { }); } catch (e) { }
     })
     .catch(function () { });
   function S0() {
