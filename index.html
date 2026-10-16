@@ -2437,7 +2437,57 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     "stroke": "#36eac4"
    }
   ]
- }
+ },
+ "segs": [
+  {
+   "key": "abs_chill_GWh",
+   "w0": 205.1,
+   "v0": 8.12,
+   "ppu": 25.258621
+  },
+  {
+   "key": "Q_hw_GWh",
+   "w0": 94.9,
+   "v0": 3.76,
+   "ppu": 25.239362
+  },
+  {
+   "key": "rev_selfgen_wan",
+   "w0": 152.3,
+   "v0": 792.0,
+   "ppu": 0.192298
+  },
+  {
+   "key": "rev_cold_wan",
+   "w0": 124.9,
+   "v0": 649.6,
+   "ppu": 0.192272
+  },
+  {
+   "key": "rev_hw",
+   "w0": 19.0,
+   "v0": 98.72,
+   "ppu": 0.192464
+  },
+  {
+   "key": "rev_ca",
+   "w0": 3.8,
+   "v0": 19.74,
+   "ppu": 0.192503
+  },
+  {
+   "key": "pv_self_GWh",
+   "w0": 255.0,
+   "v0": 9.775,
+   "ppu": 26.086957
+  },
+  {
+   "key": "pv_feed_GWh",
+   "w0": 45.0,
+   "v0": 1.725,
+   "ppu": 26.086957
+  }
+ ]
 }</script>
 
 <script>
@@ -2564,12 +2614,25 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     });
   }
 
+  /* 横向条形（class="seg"）：width = 新值 × (w0/v0)，逐个按槽位表顺序对应 */
+  function segs() {
+    var list = (S.segs || []);
+    var els = document.querySelectorAll('rect.seg');
+    if (!els.length) return;
+    list.forEach(function (sg, i) {
+      var v = V[sg.key]; if (v == null || !sg.v0) return;
+      var w = sg.w0 * (v / sg.v0);
+      var el = els[i]; if (!el) return;
+      el.setAttribute('width', fnum(w));
+    });
+  }
+
   fetch('data.json?t=' + Date.now())
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (d) {
       V = d.vals; KB = (S0() || {}).hbar.keys; BV = d.hbar_base;
       (d.repl || []).forEach(function (r) { rep(r.o, r.n); });
-      geom(); refln(); hbars(); donut();
+      geom(); refln(); hbars(); donut(); segs();
       document.documentElement.setAttribute('data-rendered', '1');
     })
     .catch(function () { });
