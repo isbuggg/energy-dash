@@ -989,6 +989,19 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
   "regen_short_max_hits": 5
  },
  "text": {
+  "Q_cool_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "8.12",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 12,
+     "scope": "any"
+    }
+   ]
+  },
   "abs_chill_GWh": {
    "pct": false,
    "forms": [
@@ -1221,14 +1234,6 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "pct": false,
    "forms": [
     {
-     "s": "840.21",
-     "dec": 2,
-     "comma": false,
-     "suffix": "",
-     "n": 6,
-     "scope": "any"
-    },
-    {
      "s": "840",
      "dec": 0,
      "comma": false,
@@ -1361,6 +1366,126 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     }
    ]
   },
+  "heat_cool_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "68.4",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    }
+   ]
+  },
+  "heat_hw_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "31.6",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_ch_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "550.00",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_es_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1,260.00",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "1,260",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_pv_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "3,500.00",
+     "dec": 2,
+     "comma": true,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "3,500",
+     "dec": 0,
+     "comma": true,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_share_ch_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "10.4",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_share_es_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "23.7",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 4,
+     "scope": "any"
+    }
+   ]
+  },
+  "inv_share_pv_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "65.9",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
   "joint_carbon_t": {
    "pct": false,
    "forms": [
@@ -1453,19 +1578,6 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     }
    ]
   },
-  "lng_mech_gap": {
-   "pct": false,
-   "forms": [
-    {
-     "s": "0.0262",
-     "dec": 4,
-     "comma": false,
-     "suffix": "",
-     "n": 6,
-     "scope": "any"
-    }
-   ]
-  },
   "lng_net_wan": {
    "pct": false,
    "forms": [
@@ -1517,6 +1629,90 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
      "comma": false,
      "suffix": "",
      "n": 1,
+     "scope": "any"
+    }
+   ]
+  },
+  "pb_ch_year": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1.28",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    },
+    {
+     "s": "1.3",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "pb_es_year": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "10.50",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 6,
+     "scope": "any"
+    },
+    {
+     "s": "10.5",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 12,
+     "scope": "any"
+    }
+   ]
+  },
+  "pb_pv_year": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "4.72",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 3,
+     "scope": "any"
+    }
+   ]
+  },
+  "pv_feed_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "1.725",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 8,
+     "scope": "any"
+    },
+    {
+     "s": "1.73",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "1.7",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
      "scope": "any"
     }
    ]
@@ -1581,6 +1777,27 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
      "suffix": "",
      "n": 1,
      "scope": "text"
+    }
+   ]
+  },
+  "pv_self_GWh": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "9.775",
+     "dec": 3,
+     "comma": false,
+     "suffix": "",
+     "n": 8,
+     "scope": "any"
+    },
+    {
+     "s": "9.78",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
     }
    ]
   },
@@ -1681,44 +1898,23 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     }
    ]
   },
-  "rev_ch": {
-   "pct": false,
-   "forms": [
-    {
-     "s": "649.60",
-     "dec": 2,
-     "comma": false,
-     "suffix": "",
-     "n": 2,
-     "scope": "any"
-    },
-    {
-     "s": "649.6",
-     "dec": 1,
-     "comma": false,
-     "suffix": "",
-     "n": 2,
-     "scope": "any"
-    },
-    {
-     "s": "650",
-     "dec": 0,
-     "comma": false,
-     "suffix": "",
-     "n": 3,
-     "scope": "text"
-    }
-   ]
-  },
   "rev_hw": {
    "pct": false,
    "forms": [
     {
-     "s": "98.72",
+     "s": "98.5702",
+     "dec": 4,
+     "comma": false,
+     "suffix": "",
+     "n": 1,
+     "scope": "any"
+    },
+    {
+     "s": "98.57",
      "dec": 2,
      "comma": false,
      "suffix": "",
-     "n": 5,
+     "n": 1,
      "scope": "any"
     }
    ]
@@ -1727,32 +1923,37 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "pct": false,
    "forms": [
     {
-     "s": "792.00",
+     "s": "802.12",
      "dec": 2,
      "comma": false,
      "suffix": "",
-     "n": 3,
+     "n": 1,
      "scope": "any"
-    },
-    {
-     "s": "792",
-     "dec": 0,
-     "comma": false,
-     "suffix": "",
-     "n": 2,
-     "scope": "text"
     }
    ]
   },
-  "rev_total": {
+  "rev_pv_feed_wan": {
    "pct": false,
    "forms": [
     {
-     "s": "1560.06",
+     "s": "69.00",
      "dec": 2,
      "comma": false,
      "suffix": "",
-     "n": 8,
+     "n": 2,
+     "scope": "any"
+    }
+   ]
+  },
+  "rev_pv_self_wan": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "733.12",
+     "dec": 2,
+     "comma": false,
+     "suffix": "",
+     "n": 2,
      "scope": "any"
     }
    ]
@@ -1778,6 +1979,32 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
     }
    ]
   },
+  "share_ch_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "33.3",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 5,
+     "scope": "any"
+    }
+   ]
+  },
+  "share_es_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "9.3",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 7,
+     "scope": "any"
+    }
+   ]
+  },
   "share_lng_pct": {
    "pct": false,
    "forms": [
@@ -1787,6 +2014,19 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
      "comma": false,
      "suffix": "",
      "n": 10,
+     "scope": "any"
+    }
+   ]
+  },
+  "share_pv_pct": {
+   "pct": false,
+   "forms": [
+    {
+     "s": "57.4",
+     "dec": 1,
+     "comma": false,
+     "suffix": "",
+     "n": 5,
      "scope": "any"
     }
    ]
@@ -1811,7 +2051,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "cchp_payback",
    "group": "g1",
    "dir": "H",
-   "ppu": 117.60630692575035,
+   "ppu": 117.60630692438586,
    "base": {
     "x": 150.0,
     "y": 52.0,
@@ -1824,7 +2064,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "pves_payback",
    "group": "g1",
    "dir": "H",
-   "ppu": 117.53227401129944,
+   "ppu": 117.53227401063734,
    "base": {
     "x": 150.0,
     "y": 96.0,
@@ -1850,7 +2090,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "joint_payback",
    "group": "g1",
    "dir": "H",
-   "ppu": 117.36712214385112,
+   "ppu": 117.36712214491203,
    "base": {
     "x": 150.0,
     "y": 184.0,
@@ -1941,7 +2181,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "ci_per_net",
    "group": "g3",
    "dir": "H",
-   "ppu": 342.4008259767439,
+   "ppu": 342.40082596334406,
    "base": {
     "x": 108.0,
     "y": 48.0,
@@ -1954,7 +2194,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "ci_per_invest",
    "group": "g3",
    "dir": "H",
-   "ppu": 342.58926673543016,
+   "ppu": 342.589266713819,
    "base": {
     "x": 108.0,
     "y": 142.0,
@@ -1967,7 +2207,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "rev_total",
    "group": "g4",
    "dir": "WF",
-   "ppu": 0.14428290384756193,
+   "ppu": 0.14428212676896002,
    "base": {
     "x": 77.8,
     "y": 83.22,
@@ -1980,7 +2220,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "cost_gas",
    "group": "g4",
    "dir": "WF",
-   "ppu": 0.14424913682601911,
+   "ppu": 0.14424769433465465,
    "base": {
     "x": 198.5,
     "y": 83.22,
@@ -1993,7 +2233,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "cost_om",
    "group": "g4",
    "dir": "WF",
-   "ppu": 0.14162457912457915,
+   "ppu": 0.14162457912457913,
    "base": {
     "x": 319.2,
     "y": 204.53,
@@ -2006,7 +2246,7 @@ document.querySelectorAll('.hub-activate').forEach(hub=>{let action=()=>scrollMo
    "key": "cchp_net_wan",
    "group": "g4",
    "dir": "WF",
-   "ppu": 0.14434938202753547,
+   "ppu": 0.14434938202754455,
    "base": {
     "x": 439.9,
     "y": 211.26,
