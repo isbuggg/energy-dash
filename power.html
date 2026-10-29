@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>供电系统设计 · 结果可视化大屏</title>
+<style>
+:root{
+  --bg:#050d2a; --panel:#0b1748; --panel2:#101e5b; --line:#2877d9;
+  --cyan:#42dcff; --blue:#4f8cff; --yellow:#ffd43b; --green:#45e6ad;
+  --red:#ff647c; --text:#dcecff; --muted:#7fa0cf;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+body{
+ background:
+ radial-gradient(circle at 50% 20%,rgba(45,117,220,.20),transparent 34%),
+ linear-gradient(180deg,#07143c 0%,#050b25 100%);
+}
+.gridbg{position:fixed;inset:0;pointer-events:none;opacity:.25;
+ background-image:linear-gradient(rgba(64,124,210,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(64,124,210,.16) 1px,transparent 1px);
+ background-size:42px 42px;
+ mask-image:linear-gradient(to bottom,black 0%,black 65%,transparent 100%);
+}
+.top{
+ height:92px;position:relative;display:flex;align-items:center;justify-content:center;
+ border-bottom:1px solid rgba(69,171,255,.35);
+ background:linear-gradient(180deg,rgba(12,32,91,.92),rgba(5,13,42,.15));
+}
+.top:before,.top:after{content:"";position:absolute;top:39px;height:2px;background:linear-gradient(90deg,transparent,#36d8ff,#397cff,transparent)}
+.top:before{left:0;width:30%}.top:after{right:0;width:30%}
+.title{
+ font-size:34px;font-weight:700;letter-spacing:8px;
+ text-shadow:0 0 16px rgba(65,209,255,.75);
+}
+.subtitle{position:absolute;top:61px;font-size:12px;color:#77a6d7;letter-spacing:3px}
+.clock{position:absolute;right:28px;top:22px;color:#8cb4df;font-size:13px}
+.badge{position:absolute;left:28px;top:20px;border:1px solid #2474d5;padding:7px 13px;color:#56dfff;background:#071a4a;box-shadow:0 0 12px rgba(39,150,255,.2)}
+
+.dashboard{
+ height:calc(100vh - 92px);padding:14px 18px 18px;
+ display:grid;grid-template-columns:21% 58% 21%;gap:12px;
+ position:relative;overflow:auto;
+}
+/* ★ min-height:0 是关键：缺了它 flex item 的 min-height:auto 会拒绝收缩，
+   导致列内内容把整列撑高、整页出现 242px 滚动 */
+.col{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px}
+.card{
+ position:relative;min-height:0;border:1px solid rgba(63,149,240,.65);
+ background:linear-gradient(180deg,rgba(15,35,91,.95),rgba(6,17,51,.96));
+ box-shadow:inset 0 0 22px rgba(35,109,205,.12),0 0 12px rgba(25,105,220,.08);
+ overflow:hidden;
+}
+.card:before{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(135deg,rgba(66,220,255,.08),transparent 18%,transparent 80%,rgba(66,220,255,.05));
+}
+.cardhead{
+ height:42px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;
+ background:linear-gradient(90deg,rgba(25,78,170,.82),rgba(12,35,99,.35));
+ border-bottom:1px solid rgba(69,157,244,.38);
+ font-weight:700;font-size:16px;
+}
+.cardhead .mark{display:flex;align-items:center;gap:8px}
+.cardhead .mark i{width:4px;height:18px;background:var(--cyan);box-shadow:0 0 9px var(--cyan)}
+.dots{display:flex;gap:6px}.dots span{width:7px;height:7px;border-radius:50%;background:#49ddff;box-shadow:0 0 8px #49ddff}.dots span:nth-child(2){background:#6d91ff}.dots span:nth-child(3){background:#45e6ad}
+.body{height:calc(100% - 42px);padding:12px 14px;position:relative;overflow:auto}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kpi{padding:12px 10px;border:1px solid rgba(68,151,241,.45);background:rgba(12,30,78,.8)}
+.kpi small{display:block;color:#91acd0;font-size:12px;margin-bottom:6px}.kpi b{font-size:23px;color:#eaf7ff}.kpi em{font-size:11px;color:#4ee3ff;font-style:normal;margin-left:3px}
+.kpi .foot{display:block;margin-top:5px;font-size:10px;color:#7e9bc4;line-height:1.5}
+
+/* 三列高度：c1/c2 定高，c3（或 bottom / 右列后两张）用 flex 吃满剩余 */
+.left .c1{height:290px}.left .c2{height:280px}.left .c3{flex:1;min-height:0}
+.center .row1{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}.center .row1>.card{min-height:0}
+.center .bottom{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.right .c1{height:240px}.right .c2{flex:1;min-height:0}.right .c3{flex:1;min-height:0}
+/* grid 单元格也要允许收缩 */
+.center .bottom>.card{min-height:0}.center .row1>.card .body,.center .bottom>.card .body{padding:6px 10px}
+
+.chart{display:block;width:100%;height:100%}
+svg text{font-family:"Microsoft YaHei","Segoe UI",sans-serif}
+.axis{stroke:#4169a5;stroke-width:1}.dash{stroke:#26477d;stroke-width:1;stroke-dasharray:4 6}
+.label{fill:#88a9d3;font-size:11px}.value{fill:#dff7ff;font-size:12px;font-weight:600}
+
+.legend{display:flex;gap:14px;font-size:11px;color:#9db6da;margin-bottom:4px}.legend span{display:flex;align-items:center;gap:5px}.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.progress{height:7px;background:#132d62;border-radius:6px;overflow:hidden;margin-top:6px}.progress i{display:block;height:100%;background:linear-gradient(90deg,#3a80ff,#48e4ff);box-shadow:0 0 10px #39caff}
+.device{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid rgba(62,105,168,.28)}
+.device:last-of-type{border-bottom:0}.ico{width:38px;height:38px;border-radius:8px;background:linear-gradient(145deg,#1a4c9c,#0a225b);display:flex;align-items:center;justify-content:center;font-size:19px;color:#5ce5ff;border:1px solid #2d86df}
+.device b{display:block;font-size:13px}.device small{color:#7e9bc4;font-size:10px}.status{font-size:10px;padding:4px 8px;border-radius:10px;background:rgba(47,207,144,.13);color:#52e5b2;border:1px solid rgba(69,230,173,.3)}
+.status.warn{color:#ffd34b;background:rgba(255,211,75,.10);border-color:rgba(255,211,75,.3)}
+.status.sel{color:#56dfff;background:rgba(66,220,255,.10);border-color:rgba(66,220,255,.35)}
+
+.rank{display:grid;grid-template-columns:25px 1fr 122px;gap:8px;align-items:center;
+ padding:5px 0;border-bottom:1px solid rgba(62,105,168,.25);font-size:11px}
+.rank .n{color:#ffd54b;font-weight:700}
+.rank span:last-child{text-align:right;color:#bceeff;font-family:Consolas,monospace}
+.rank.src{display:block;border-bottom:0;padding:8px 0 0;color:#6d91bd;font-size:10px;line-height:1.6}
+
+.donutWrap{display:flex;align-items:center;gap:15px;height:100%}.donut{width:150px;height:150px;border-radius:50%;background:conic-gradient(#3fdfff 0 96.6%,#48e4ad 96.6% 100%);position:relative;box-shadow:0 0 22px rgba(54,204,255,.18)}.donut:after{content:"";position:absolute;inset:25px;border-radius:50%;background:#08143d;border:1px solid #254c91}.donutcenter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:2}.donutcenter b{font-size:21px}.donutcenter small{font-size:10px;color:#829ec8}.dlegend{font-size:11px;line-height:2;color:#9db8dd}.dlegend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.dlegend .sub{margin-top:8px;color:#6f91bf;line-height:1.7}
+
+/* 改造前后对比行 */
+.cmp{padding:7px 2px;border-bottom:1px solid rgba(62,105,168,.28)}
+.cmp:last-of-type{border-bottom:0}
+.cmp .r1{display:flex;justify-content:space-between;align-items:baseline}
+.cmp .cl{font-size:12.5px;color:#bcd4ef;font-weight:600}
+.cmp .cd{font-size:12px;color:#4ce5ae;font-weight:700;font-family:Consolas,monospace}
+.cmp .r2{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:#8fb0d8}
+.cmp .r2 b{color:#eaf7ff;font-family:Consolas,monospace;font-weight:600}
+.cmpnote{margin-top:9px;color:#7899c7;font-size:10.5px;line-height:1.7}
+
+/* 口径警示框 */
+.kbox{border:1px solid rgba(255,211,75,.32);background:rgba(255,211,75,.06);
+ padding:5px 10px;border-radius:6px;font-size:10.5px;line-height:1.5;color:#cfe2f7;margin-bottom:4px}
+.kbox b{color:#ffd34c;font-weight:700}
+.kbox.cy{border-color:rgba(66,220,255,.32);background:rgba(66,220,255,.06)}
+.kbox.cy b{color:#56dfff}
+.kbox code{font-family:Consolas,monospace;color:#8fd8ff;font-size:10.5px}
+.kbox .src{display:block;margin-top:7px;padding-top:6px;border-top:1px dashed rgba(120,160,210,.3);color:#7e9bc4;font-size:10.5px}
+
+.tooltip{position:fixed;display:none;z-index:99;padding:9px 11px;border:1px solid #3fcaff;background:#07183f;box-shadow:0 0 15px rgba(37,172,255,.25);font-size:12px;color:#dff8ff;pointer-events:none}
+.clickable{cursor:pointer}.clickable:hover{filter:brightness(1.18);box-shadow:inset 0 0 28px rgba(52,190,255,.14),0 0 16px rgba(40,145,255,.22)}
+.modal{position:fixed;inset:0;background:rgba(1,7,25,.72);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(4px)}
+.modalbox{width:720px;border:1px solid #36caff;background:linear-gradient(180deg,#0c245d,#071336);box-shadow:0 0 35px rgba(33,175,255,.25);padding:22px}
+.modalbox h2{margin:0 0 14px;color:#54ddff}.close{float:right;cursor:pointer;color:#9fc9ef;font-size:20px}
+.detailgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.detail{padding:12px;border:1px solid #214e94;background:#0a1b4a}.detail small{color:#819fc8}.detail b{display:block;margin-top:6px;font-size:15px;line-height:1.5}
+.modalnote{margin-top:15px;color:#86a8d3;font-size:12px;line-height:1.8}
+
+@media(max-width:1200px){.title{font-size:24px}.dashboard{grid-template-columns:1fr;height:auto;overflow:auto}.left,.center,.right{height:auto}.center .bottom{display:block}.card{height:auto!important;min-height:220px}body{overflow:auto}}
+</style>
+</head>
+<body>
+<div class="gridbg"></div>
+<header class="top">
+  <div class="badge">POWER · DESIGN / 01</div>
+  <div class="title">供电系统设计 · 结果可视化</div>
+  <div class="subtitle">光储充一体化方案 · 三方案选型对比 · 技术经济分析</div>
+  <div class="clock" id="clock">2026-10-28 14:38:18</div>
+</header>
+
+<main class="dashboard">
+<!-- ═══════════════ 左列 ═══════════════ -->
+<section class="col left">
+  <div class="card c1">
+    <div class="cardhead"><div class="mark"><i></i>方案核心指标</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body kpis">
+      <div class="kpi clickable" data-name="年用电量"><small>年用电量</small><b>480</b><em>万kWh</em><span class="foot">园区年用电基数（需求侧）</span></div>
+      <div class="kpi clickable" data-name="光伏装机"><small>光伏装机</small><b>1,200</b><em>kWp</em><span class="foot">年发电 139.4 万 kWh</span></div>
+      <div class="kpi clickable" data-name="储能容量"><small>储能容量</small><b>2,000</b><em>kWh</em><span class="foot">500 kW / 4h · LFP</span></div>
+      <div class="kpi clickable" data-name="最大需量"><small>最大需量</small><b>1,210</b><em>kW</em><span class="foot">改造后降至 705 kW（−41.7%）</span></div>
+    </div>
+  </div>
+
+  <div class="card c2">
+    <div class="cardhead"><div class="mark"><i></i>三方案选型状态</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body">
+      <div class="device clickable" data-name="① 纯光伏"><div class="ico">☀</div><div><b>① 纯光伏（自用+上网）</b><small>投资 384 万 · 净收益 138.72 万/年</small></div><span class="status">2.77 年</span></div>
+      <div class="device clickable" data-name="② 光伏 + 储能"><div class="ico">▣</div><div><b>② 光伏 + 储能</b><small>投资 684 万 · 净收益 177.85 万/年</small></div><span class="status warn">3.85 年</span></div>
+      <div class="device clickable" data-name="③ 光储充（本次设计）"><div class="ico">⚡</div><div><b>③ 光储充（本次设计）</b><small>投资 684 万 · 净收益 177.85 万/年</small></div><span class="status sel">本次设计</span></div>
+      <div class="cmpnote">★ 本次算例充电桩负荷为 0 ⇒ 方案②与③退化为同一方案</div>
+    </div>
+  </div>
+
+  <div class="card c3">
+    <div class="cardhead"><div class="mark"><i></i>关键能耗与技术指标</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body">
+      <div class="rank w"><span class="n">01</span><span>改造前综合电价</span><span>0.9679 元/kWh</span></div>
+      <div class="rank w"><span class="n">02</span><span>改造后购电单价</span><span>0.7865 元/kWh</span></div>
+      <div class="rank w"><span class="n">03</span><span>光伏 LCOE</span><span>0.5926 元/kWh</span></div>
+      <div class="rank w"><span class="n">04</span><span>年利用小时</span><span>3,968.70 h</span></div>
+      <div class="rank w"><span class="n">05</span><span>光伏等效小时</span><span>1,161.90 h</span></div>
+      <div class="rank w"><span class="n">06</span><span>年碳减排</span><span>722.76 tCO₂</span></div>
+      <div class="rank w"><span class="n">07</span><span>负荷率</span><span>45.3%</span></div>
+      <div class="rank src">口径详见右下「口径与选型结论」</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 中列 ═══════════════ -->
+<section class="col center">
+  <div class="row1">
+  <div class="card">
+    <div class="cardhead"><div class="mark"><i></i>三方案投资规模与年净收益</div>
+      <div class="legend"><span><i style="background:#4e8fff"></i>初始投资</span><span><i style="background:#ffd43b"></i>年净收益</span></div></div>
+    <div class="body">
+      <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" viewBox="0 0 430 386" preserveAspectRatio="xMidYMid meet">
+        <g>
+          <line x1="26" y1="8" x2="404" y2="8" class="dash"/><line x1="26" y1="82" x2="404" y2="82" class="dash"/><line x1="26" y1="156" x2="404" y2="156" class="dash"/><line x1="26" y1="230" x2="404" y2="230" class="dash"/><line x1="26" y1="304" x2="404" y2="304" class="axis"/>
+          <text x="24" y="12" class="label" text-anchor="end">800</text><text x="24" y="86" class="label" text-anchor="end">600</text><text x="24" y="160" class="label" text-anchor="end">400</text><text x="24" y="234" class="label" text-anchor="end">200</text><text x="24" y="308" class="label" text-anchor="end">0</text>
+          <rect x="41" y="161.92" width="36" height="142.08" fill="#4e8fff"/>
+          <rect x="85" y="252.67" width="36" height="51.33" fill="#ffd43b"/>
+          <text x="59" y="155.92" class="value" text-anchor="middle" style="font-size:13px">384</text>
+          <text x="103" y="246.67" class="value" text-anchor="middle" style="font-size:13px">138.72</text>
+          <rect x="180" y="50.92" width="36" height="253.08" fill="#4e8fff"/>
+          <rect x="224" y="238.20" width="36" height="65.80" fill="#ffd43b"/>
+          <text x="198" y="44.92" class="value" text-anchor="middle" style="font-size:13px">684</text>
+          <text x="242" y="232.20" class="value" text-anchor="middle" style="font-size:13px">177.85</text>
+          <rect x="319" y="50.92" width="36" height="253.08" fill="#4e8fff"/>
+          <rect x="363" y="238.20" width="36" height="65.80" fill="#ffd43b"/>
+          <text x="337" y="44.92" class="value" text-anchor="middle" style="font-size:13px">684</text>
+          <text x="381" y="232.20" class="value" text-anchor="middle" style="font-size:13px">177.85</text>
+          <g class="label" style="font-size:13px"><text x="76" y="322" text-anchor="middle">① 纯光伏</text><text x="215" y="322" text-anchor="middle">② 光伏+储能</text><text x="354" y="322" text-anchor="middle">③ 光储充</text></g>
+          <text x="215" y="344" class="label" text-anchor="middle" style="font-size:12px">初始投资 / 年净收益（万元）</text>
+          <text x="215" y="362" class="label" text-anchor="middle" style="font-size:11.5px">★ 纯光伏投资仅 384 万、回收期 2.77 年，优于本次光储充设计</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cardhead"><div class="mark"><i></i>三方案静态投资回收期</div>
+      <div class="legend"><span><i style="background:#45dcff"></i>静态回收期（年）</span></div></div>
+    <div class="body">
+      <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" viewBox="0 0 430 386" preserveAspectRatio="xMidYMid meet">
+        <g>
+          <line x1="8" y1="8" x2="425" y2="8" class="dash"/><line x1="112.25" y1="8" x2="112.25" y2="330" class="dash"/><line x1="216.5" y1="8" x2="216.5" y2="330" class="dash"/><line x1="320.75" y1="8" x2="320.75" y2="330" class="dash"/><line x1="425" y1="8" x2="425" y2="330" class="dash"/><line x1="8" y1="330" x2="425" y2="330" class="axis"/>
+          <g class="label" style="font-size:15px"><text x="8" y="360" text-anchor="middle">0</text><text x="112.25" y="360" text-anchor="middle">1</text><text x="216.5" y="360" text-anchor="middle">2</text><text x="320.75" y="360" text-anchor="middle">3</text><text x="425" y="360" text-anchor="end">4（年）</text></g>
+          <text x="8" y="38" class="label" style="font-size:13px">① 纯光伏</text>
+          <text x="8" y="138" class="label" style="font-size:13px">② 光伏+储能</text>
+          <text x="8" y="238" class="label" style="font-size:13px">③ 光储充</text>
+          <rect x="8" y="48" width="288.77" height="52" fill="#3fdcff"/>
+          <rect x="8" y="148" width="401.36" height="52" fill="#2f7fe0"/>
+          <rect x="8" y="248" width="401.36" height="52" fill="#2f7fe0"/>
+          <text x="284.77" y="81" class="value" text-anchor="end" style="font-size:20px" fill="#04121f">2.77</text>
+          <text x="397.36" y="181" class="value" text-anchor="end" style="font-size:20px" fill="#ffffff">3.85</text>
+          <text x="397.36" y="281" class="value" text-anchor="end" style="font-size:20px" fill="#ffffff">3.85</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  </div>
+  <div class="bottom">
+    <div class="card">
+      <div class="cardhead"><div class="mark"><i></i>年电量供需平衡（改造后）</div><div class="dots"><span></span><span></span><span></span></div></div>
+      <div class="body">
+        <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" viewBox="0 0 430 386" preserveAspectRatio="xMidYMid meet">
+          <g transform="rotate(-90 215 143)">
+            <circle cx="215" cy="143" r="92" fill="none" stroke="#3fdcff" stroke-width="26" stroke-dasharray="162.43 415.62" stroke-dashoffset="0"/>
+            <circle cx="215" cy="143" r="92" fill="none" stroke="#45e6ad" stroke-width="26" stroke-dasharray="60.12 517.93" stroke-dashoffset="-162.43"/>
+            <circle cx="215" cy="143" r="92" fill="none" stroke="#4f81ff" stroke-width="26" stroke-dasharray="355.50 222.55" stroke-dashoffset="-222.55"/>
+          </g>
+          <text x="215" y="143" class="value" text-anchor="middle" style="font-size:28px">4,800,000</text>
+          <text x="215" y="166" class="label" text-anchor="middle" style="font-size:13px">总用电量 kWh / 年</text>
+          <g class="label" style="font-size:15px">
+            <rect x="46" y="258" width="13" height="13" rx="2" fill="#3fdcff"/><text x="66" y="269">光伏自发自用 1,346,926 kWh（28.1%）</text>
+            <rect x="46" y="286" width="13" height="13" rx="2" fill="#45e6ad"/><text x="66" y="297">储能谷充峰放 498,869 kWh（10.4%）</text>
+            <rect x="46" y="314" width="13" height="13" rx="2" fill="#4f81ff"/><text x="66" y="325">电网直供 2,954,205 kWh（61.5%）</text>
+          </g>
+          <text x="215" y="354" class="value" text-anchor="middle" style="font-size:16px" fill="#4ce5ae">平衡 1,346,926 + 498,869 + 2,954,205 = 4,800,000</text>
+          <text x="215" y="378" class="label" text-anchor="middle" style="font-size:15px">残差 0.00 kWh ｜ 储能损耗 67,516 kWh 已计入电网直供</text>
+        </svg>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cardhead"><div class="mark"><i></i>度电成本三口径对比</div><div class="dots"><span></span><span></span><span></span></div></div>
+      <div class="body">
+        <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" <svg class="chart" viewBox="0 0 430 386" preserveAspectRatio="xMidYMid meet">
+          <g>
+            <line x1="8" y1="10" x2="8" y2="330" class="axis"/>
+            <line x1="91.4" y1="10" x2="91.4" y2="330" class="dash"/><line x1="174.8" y1="10" x2="174.8" y2="330" class="dash"/><line x1="258.2" y1="10" x2="258.2" y2="330" class="dash"/><line x1="341.6" y1="10" x2="341.6" y2="330" class="dash"/><line x1="425" y1="10" x2="425" y2="330" class="dash"/>
+            <g class="label" style="font-size:15px"><text x="8" y="356" text-anchor="middle">0</text><text x="91.4" y="356" text-anchor="middle">0.2</text><text x="174.8" y="356" text-anchor="middle">0.4</text><text x="258.2" y="356" text-anchor="middle">0.6</text><text x="341.6" y="356" text-anchor="middle">0.8</text><text x="425" y="356" text-anchor="end">1.0</text></g>
+            <text x="8" y="30" class="label" style="font-size:14px">改造前综合电价</text>
+            <text x="8" y="130" class="label" style="font-size:14px">改造后购电单价</text>
+            <text x="8" y="230" class="label" style="font-size:14px">光伏 LCOE</text>
+            <rect x="8" y="40" width="403.61" height="52" fill="#ffd43b"/>
+            <rect x="8" y="140" width="327.97" height="52" fill="#4e8fff"/>
+            <rect x="8" y="240" width="247.11" height="52" fill="#45e6ad"/>
+            <text x="399.61" y="74" class="value" text-anchor="end" style="font-size:22px" fill="#04121f">0.9679</text>
+            <text x="323.97" y="174" class="value" text-anchor="end" style="font-size:22px" fill="#ffffff">0.7865</text>
+            <text x="243.11" y="274" class="value" text-anchor="end" style="font-size:22px" fill="#04121f">0.5926</text>
+            <text x="215" y="374" class="label" text-anchor="middle" style="font-size:15.5px">★ 三口径分母不同 ⇒ 不可直接相减（详见右下口径说明）</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 右列 ═══════════════ -->
+<section class="col right">
+  <div class="card c1">
+    <div class="cardhead"><div class="mark"><i></i>光伏发电量去向</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body donutWrap">
+      <div class="donut"><div class="donutcenter"><b>139.4</b><small>万 kWh / 年发电</small></div></div>
+      <div class="dlegend">
+        <div><i style="background:#3fdfff"></i>自发自用 96.6%</div>
+        <div><i style="background:#48e4ad"></i>余电上网 3.4%</div>
+        <div class="sub">自用 1,346,926 kWh<br>上网 47,303 kWh<br>弃电 0 kWh<br>等效利用小时 1,161.9 h</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card c2">
+    <div class="cardhead"><div class="mark"><i></i>改造前后对比</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body">
+      <div class="cmp">
+        <div class="r1"><span class="cl">年电费</span><span class="cd">▼ 40.4%</span></div>
+        <div class="r2"><span>改造前 <b>464.57</b> 万元</span><span>改造后 <b>276.88</b> 万元</span></div>
+        <div class="progress"><i style="width:40.4%"></i></div>
+      </div>
+      <div class="cmp">
+        <div class="r1"><span class="cl">最大需量</span><span class="cd">▼ 41.7%</span></div>
+        <div class="r2"><span>改造前 <b>1,209.50</b> kW</span><span>改造后 <b>705.40</b> kW</span></div>
+        <div class="progress"><i style="width:41.7%"></i></div>
+      </div>
+      <div class="cmp">
+        <div class="r1"><span class="cl">购电量</span><span class="cd">▼ 26.7%</span></div>
+        <div class="r2"><span>改造前 <b>4,800,000</b> kWh</span><span>改造后 <b>3,520,590</b> kWh</span></div>
+        <div class="progress"><i style="width:26.7%"></i></div>
+      </div>
+      <div class="cmpnote">三项全部下降：年电费 −187.69 万 / 需量 −504.1 kW / 购电量 −128 万 kWh</div>
+    </div>
+  </div>
+
+  <div class="card c3">
+    <div class="cardhead"><div class="mark"><i></i>口径与选型结论</div><div class="dots"><span></span><span></span><span></span></div></div>
+    <div class="body">
+      <div class="kbox"><b>读图注意</b>：方案②与③数值完全相同（684 万 / 177.85 万 / 3.85 年）——充电桩负荷为 0，两方案退化为同一方案，系入参为 0 的真实后果，非重复数据。</div>
+      <div class="kbox cy"><b>三个「电价」口径不同</b>：0.9679 的分母是<b>总用电</b>（含需量费摊入），0.7865 的分母是<b>购电量</b>，LCOE 0.5926 是<b>全生命周期</b>成本 ⇒ 不可直接相减。</div>
+      <div class="kbox cy"><b>选型结论</b>：纯光伏 384 万 / 2.77 年，优于本次光储充（684 万 / 3.85 年）。口径与后台智能体一致：储能 500 kW/4h 谷充峰放、光伏 22° 正南；充电桩负荷 0（<code>ev_calc_kw=0</code>）⇒ ②③等价。</div>
+      <span class="src" style="display:block;margin-top:4px;color:#7e9bc4;font-size:10.5px">数据来源：HiAgent「供电系统设计」工作流 observation（89 个出参字段）＋ compare_zh 三方案表</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+<div class="modal" id="modal">
+ <div class="modalbox">
+  <span class="close" id="close">×</span>
+  <h2 id="modalTitle">详情</h2>
+  <div class="detailgrid">
+    <div class="detail"><small id="l1">指标</small><b id="m1">—</b></div>
+    <div class="detail"><small id="l2">数值</small><b id="m2">—</b></div>
+    <div class="detail"><small id="l3">口径 / 说明</small><b id="m3">—</b></div>
+  </div>
+  <div class="modalnote" id="mnote"></div>
+ </div>
+</div>
+
+<script>
+function tick(){
+ const d=new Date(),p=n=>String(n).padStart(2,'0');
+ document.getElementById('clock').textContent=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+setInterval(tick,1000);tick();
+
+const D={
+ "年用电量":["园区年用电基数","4,800,000 kWh","需求侧口径，改造前后不变","能量方程闭环：光伏自用 1,346,926 + 储能放电 498,869 + 电网直供 2,954,205 = 4,800,000 kWh，残差 0.00"],
+ "光伏装机":["光伏装机容量","1,200 kWp","年发电 1,394,228.90 kWh","按 1,200 kWp 折算等效利用小时 1,161.90 h；自消纳率 96.6%，弃电 0"],
+ "储能容量":["储能额定容量","2,000 kWh · 500 kW / 4h","电芯 LFP · 循环 311.8 次/年","★ 储能谷充峰放：年充 566,385 / 放 498,869 kWh（往返效率 88.08%），贡献 45.13 万元/年"],
+ "最大需量":["最大需量","1,209.50 → 705.40 kW","降 41.7%","负荷率 45.3%（年电量 ÷ 最大需量 × 8,760 h）"],
+ "① 纯光伏":["① 纯光伏（自发自用余电上网）","384.00 万元","138.72 万元/年 · 2.77 年","年收入 142.56 万，年运维 3.84 万。★ 投资仅 384 万、回收期 2.77 年，优于本次光储充设计"],
+ "② 光伏 + 储能":["② 光伏 + 储能","684.00 万元","177.85 万元/年 · 3.85 年","年收入 187.69 万（光伏 142.56 + 储能 45.13），年运维 9.84 万。与方案③数值完全相同（充电桩负荷为 0）"],
+ "③ 光储充（本次设计）":["③ 光储充（本次设计）","684.00 万元","177.85 万元/年 · 3.85 年","年收入 187.69 万，年运维 9.84 万，IRR 24.52%。★ 与方案②等价，原因是 ev_calc_kw = 0"]
+};
+const tip=document.getElementById('tooltip');
+document.querySelectorAll('.clickable').forEach(el=>{
+ el.addEventListener('mousemove',e=>{
+   tip.style.display='block';
+   tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';
+   tip.textContent='点击查看：'+(el.dataset.name||'详细信息');
+ });
+ el.addEventListener('mouseleave',()=>tip.style.display='none');
+ el.addEventListener('click',()=>{
+   tip.style.display='none';
+   const name=el.dataset.name||'详情';
+   const d=D[name]||["详情","—","—","该面板为前端交互原型，可接入实时数据而不改变页面结构。"];
+   document.getElementById('modalTitle').textContent=name;
+   document.getElementById('m1').textContent=d[1];
+   document.getElementById('m2').textContent=d[2];
+   document.getElementById('m3').textContent=d[3];
+   document.getElementById('modal').style.display='flex';
+ });
+});
+document.getElementById('close').onclick=()=>document.getElementById('modal').style.display='none';
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')e.currentTarget.style.display='none'});
+</script>
+</body>
+</html>
